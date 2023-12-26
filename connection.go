@@ -28,7 +28,7 @@ func (c *ConnectionHandlers) OnOpen(socket *gws.Conn) {
 	con := &connectionlookup.Connection{
 		Id: id,
 		Socket: socket,
-		KeyVals: make(map[string]*connectionlookup.ConnectionLockList),
+		KeyVals: make(map[int]*connectionlookup.ConnectionLockList),
 	}
 	socket.Session().Store("con", con)
 

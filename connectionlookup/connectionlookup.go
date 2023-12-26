@@ -11,7 +11,7 @@ import (
 type Connection struct {
 	Id string
 	Socket *gws.Conn
-	KeyVals map[string]*ConnectionLockList
+	KeyVals map[int]*ConnectionLockList
 }
 type ConnectionList map[string]*Connection
 type ConnectionLockList struct {
@@ -22,6 +22,7 @@ type ConnectionLockList struct {
 }
 
 type ConnectionLookup struct {
+	strings *StringMap
 	redisSync *RedisSync
 
 	// Fast lookup of ID > connection
@@ -59,6 +60,7 @@ func NewConnectionLookup(redisAddr string) (*ConnectionLookup, error) {
 	}
 
 	lookup := &ConnectionLookup{
+		strings: NewStringMap(),
 		connections: make(map[string]*Connection),
 		tree: make(map[string]map[string]*ConnectionLockList),
 		redisSync: sync,
@@ -125,7 +127,7 @@ func (c *ConnectionLookup) SetKeys(con *Connection, keys map[string]string) {
 				}
 			}
 
-			delete(con.KeyVals, key)
+			delete(con.KeyVals, c.strings.Get(key))
 
 			continue
 		}
@@ -144,7 +146,7 @@ func (c *ConnectionLookup) SetKeys(con *Connection, keys map[string]string) {
 		valList.ConnectionList[con.Id] = con
 		valList.Lock.Unlock()
 
-		con.KeyVals[key] = valList
+		con.KeyVals[c.strings.Get(key)] = valList
 	}
 
 	if c.redisSync != nil && len(newKeys) > 0 {
@@ -314,14 +316,4 @@ func (c *ConnectionLookup) DumpConnections() []map[string]string {
 	}
 
 	return entries;
-}
-
-func filterConnectionLockList(arr []*ConnectionLockList, cond func(*ConnectionLockList) bool) []*ConnectionLockList {
-	result := []*ConnectionLockList{}
-	for i := range arr {
-		if cond(arr[i]) {
-			result = append(result, arr[i])
-		}
-	}
-	return result
 }
