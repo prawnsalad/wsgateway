@@ -8,5 +8,7 @@ require (
 	github.com/google/uuid v1.5.0 // indirect
 	github.com/klauspost/compress v1.16.5 // indirect
 	github.com/lxzan/gws v1.7.0 // indirect
+	github.com/puzpuzpuz/xsync/v3 v3.0.2 // indirect
 	github.com/redis/go-redis/v9 v9.3.1 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

@@ -13,6 +13,14 @@ type Connection struct {
 	Socket *gws.Conn
 	KeyVals map[int]*ConnectionLockList
 }
+func NewConnection(id string, socket *gws.Conn) *Connection {
+	return &Connection{
+		Id: id,
+		Socket: socket,
+		KeyVals: make(map[int]*ConnectionLockList),
+	}
+}
+
 type ConnectionList map[string]*Connection
 type ConnectionLockList struct {
 	ConnectionList

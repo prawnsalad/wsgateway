@@ -13,10 +13,28 @@ import (
 	"github.com/lxzan/gws"
 )
 
-func applyHttpHandlers(library *connectionlookup.ConnectionLookup, stream *streams.StreamRedis) {
+func applyWsHandlers(library *connectionlookup.ConnectionLookup, stream *streams.StreamRedis) {
+	for _, c := range config.Endpoints {
+		applyWsEndpointHandlers(&EndpointConfig{
+			Path: c.Path,
+			SetTags: c.SetTags,
+			StreamIncludeTags: c.StreamIncludeTags,
+		}, library, stream)
+	}
+}
+
+type EndpointConfig struct {
+	Path string
+	SetTags map[string]string
+	StreamIncludeTags []string
+}
+func applyWsEndpointHandlers(conf *EndpointConfig, library *connectionlookup.ConnectionLookup, stream *streams.StreamRedis) {
+	log.Printf("Creating websocket endpoint at path %s", conf.Path)
+
 	wsHandlers := &ConnectionHandlers{
 		Libray: library,
 		Stream: stream,
+		SetTags: conf.SetTags,
 	}
 	upgrader := gws.NewUpgrader(wsHandlers, &gws.ServerOption{
 		ReadAsyncEnabled: true,         // Parallel message processing
@@ -24,7 +42,7 @@ func applyHttpHandlers(library *connectionlookup.ConnectionLookup, stream *strea
 		Recovery:         gws.Recovery, // Exception recovery
 	})
 
-	http.HandleFunc("/connect", func(writer http.ResponseWriter, request *http.Request) {
+	http.HandleFunc(conf.Path, func(writer http.ResponseWriter, request *http.Request) {
 		socket, err := upgrader.Upgrade(writer, request)
 		if err != nil {
 			return
@@ -33,11 +51,13 @@ func applyHttpHandlers(library *connectionlookup.ConnectionLookup, stream *strea
 			socket.ReadLoop() // Blocking prevents the context from being GC.
 		}()
 	})
+}
 
+func applyHttpHandlers(library *connectionlookup.ConnectionLookup, stream *streams.StreamRedis) {
 	http.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Request: /status")
 
-		w.Header().Add("Content-Type", "plain/text");
+		w.Header().Add("Content-Type", "text/plain");
 
 		log.Println("Calling dump connection...")
 		dump := library.DumpConnections()
@@ -58,7 +78,7 @@ func applyHttpHandlers(library *connectionlookup.ConnectionLookup, stream *strea
 	http.HandleFunc("/tree", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Request: /tree")
 
-		w.Header().Add("Content-Type", "plain/text");
+		w.Header().Add("Content-Type", "text/plain");
 
 		log.Println("Calling GetAllKeysAndValue...")
 		dump := library.GetAllKeysAndValue()

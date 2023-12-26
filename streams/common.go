@@ -1,5 +1,11 @@
 package streams
 
+import (
+	"net/url"
+
+	"com.wsgateway/connectionlookup"
+)
+
 type StreamEvent string
 type MessageType string
 
@@ -32,3 +38,17 @@ const (
 	MessageText MessageType = "text"
 	MessageBinary MessageType = "binary"
 )
+
+// These connection tags will be included in any stream messages
+var includeTags = map[string]bool{"foo":true, "group":true}
+func makeTagString(con *connectionlookup.Connection) string {
+	tags := url.Values{}
+	for _, tag := range con.KeyVals {
+		_, exists := includeTags[tag.Key]
+		if exists {
+			tags.Add(tag.Key, tag.KeyVal)
+		}
+	}
+
+	return tags.Encode()
+}

@@ -19,22 +19,17 @@ const (
 type ConnectionHandlers struct{
 	Libray *connectionlookup.ConnectionLookup
 	Stream *streams.StreamRedis
+	SetTags map[string]string
 }
 
 func (c *ConnectionHandlers) OnOpen(socket *gws.Conn) {
 	_ = socket.SetDeadline(time.Now().Add(PingInterval + PingWait))
 
 	id := uuid.NewString()
-	con := &connectionlookup.Connection{
-		Id: id,
-		Socket: socket,
-		KeyVals: make(map[int]*connectionlookup.ConnectionLockList),
-	}
+	con := connectionlookup.NewConnection(id, socket)
 	socket.Session().Store("con", con)
 
-	c.Libray.AddConnection(con, map[string]string{
-		"foo": "bar",
-	})
+	c.Libray.AddConnection(con, c.SetTags)
 
 	c.Stream.PublishConnection(con, streams.EventOpen)
 }
