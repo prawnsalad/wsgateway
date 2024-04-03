@@ -4,7 +4,7 @@ import "testing"
 
 func TestAddConnection(t *testing.T) {
 	lib, _ := NewConnectionLookup("")
-	c := &Connection{Id: "1"}
+	c := NewConnection("1", nil)
 	lib.AddConnection(c, map[string]string{})
 
 	if len(lib.connections) != 1 {
@@ -14,7 +14,7 @@ func TestAddConnection(t *testing.T) {
 
 func TestAddConnectionWithTags(t *testing.T) {
 	lib, _ := NewConnectionLookup("")
-	c := &Connection{Id: "1"}
+	c := NewConnection("1", nil)
 	lib.AddConnection(c, map[string]string{
 		"test": "value",
 	})
@@ -32,7 +32,7 @@ func TestAddConnectionWithTags(t *testing.T) {
 
 func TestRemoveConnection(t *testing.T) {
 	lib, _ := NewConnectionLookup("")
-	c := &Connection{Id: "1"}
+	c := NewConnection("1", nil)
 	lib.AddConnection(c, map[string]string{
 		"test": "value",
 	})
@@ -60,10 +60,10 @@ func TestRemoveConnection(t *testing.T) {
 
 func TestAddMultipleConnections(t *testing.T) {
 	lib, _ := NewConnectionLookup("")
-	c := &Connection{Id: "1"}
+	c := NewConnection("1", nil)
 	lib.AddConnection(c, map[string]string{})
 
-	c2 := &Connection{Id: "2"}
+	c2 := NewConnection("2", nil)
 	lib.AddConnection(c2, map[string]string{})
 
 	if len(lib.connections) != 2 {
@@ -74,13 +74,13 @@ func TestAddMultipleConnections(t *testing.T) {
 
 func TestRemoveConnectionWithMultipleConnections(t *testing.T) {
 	lib, _ := NewConnectionLookup("")
-	c := &Connection{Id: "1"}
+	c := NewConnection("1", nil)
 	lib.AddConnection(c, map[string]string{
 		"test": "value",
 		"single": "value",
 	})
 
-	c2 := &Connection{Id: "2"}
+	c2 := NewConnection("2", nil)
 	lib.AddConnection(c2, map[string]string{
 		"test": "value",
 	})
@@ -116,13 +116,13 @@ func TestRemoveConnectionWithMultipleConnections(t *testing.T) {
 
 func TestGetConnectionWithTags(t *testing.T) {
 	lib, _ := NewConnectionLookup("")
-	c := &Connection{Id: "1"}
+	c := NewConnection("1", nil)
 	lib.AddConnection(c, map[string]string{
 		"grouppid": "grp1",
 		"userid": "1",
 	})
 
-	c2 := &Connection{Id: "2"}
+	c2 := NewConnection("2", nil)
 	lib.AddConnection(c2, map[string]string{
 		"grouppid": "grp1",
 		"userid": "2",
