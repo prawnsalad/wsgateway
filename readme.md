@@ -30,8 +30,8 @@ go run .
 ~~~
 
 On startup important bits of information is reported that will impact your system:
-- config - The config file being loaded
-- NOFILES - The max number of open files wsgateway can open. Change this via your OS ulimits
+- CONFIG - The config file being loaded
+- NOFILES - The max number of open connections wsgateway can open. Change this via your OS ulimits
 - GOMAXPROCS - Max number of goroutines able to be used. Usually the same number of CPU cores
 - NUMCPU - Number of CPU cores available. More cores = more concurrency
 
