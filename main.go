@@ -28,10 +28,12 @@ func main() {
 	}
 	config = loadedConfig
 
-	startHttpServer()
+	library, stream := initComponents()
+	runWorkers(library)
+	startHttpServer(library, stream)
 }
 
-func startHttpServer() {
+func initComponents() (*connectionlookup.ConnectionLookup, *streams.StreamRedis){
 	library, err := connectionlookup.NewConnectionLookup(config.ConnectionRedisSync.Addr)
 	if err != nil {
 		log.Fatal("Error starting: ", err.Error())
@@ -42,11 +44,16 @@ func startHttpServer() {
 		log.Fatal("Error starting: ", err.Error())
 	}
 
-	// Allow workers to boot up with the library instance
+	return library, stream
+}
+
+func runWorkers(library *connectionlookup.ConnectionLookup) {
 	for _, worker := range workersOnBoot {
 		worker(library)
 	}
+}
 
+func startHttpServer(library *connectionlookup.ConnectionLookup, stream *streams.StreamRedis) {
 	applyWsHandlers(library, stream)
 	applyHttpHandlers(library, stream)
 

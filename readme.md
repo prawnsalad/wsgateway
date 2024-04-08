@@ -21,7 +21,7 @@ ok      com.wsgateway/connectionlookup  (cached)
 # Run from code
 $ make run
 go run .
-2024/04/08 22:21:15 Starting wsgateway. GOMAXPROCS=10 NumCPU=10
+2024/04/08 22:21:15 Starting wsgateway. config=config.yml GOMAXPROCS=10 NumCPU=10
 2024/04/08 22:21:15 Connecting to redis for connection data at localhost:6379
 2024/04/08 22:21:15 Connecting to redis for streaming at localhost:6379
 2024/04/08 22:21:15 Creating websocket endpoint at path /connect
@@ -65,4 +65,4 @@ func runDevHelpers(library *connectionlookup.ConnectionLookup) {
 }
 ~~~
 
-The included `devhelpers.go-ignore` is an example that when renamed appropriately will run simulated connections and messages, removing the need for real websocket connections to test wsgateway.
+The included `worker-devhelpers.go-ignore` is an example that when renamed appropriately will run simulated connections and messages, removing the need for real websocket connections to test wsgateway.
