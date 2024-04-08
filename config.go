@@ -1,6 +1,10 @@
 package main
 
-import "gopkg.in/yaml.v3"
+import (
+	"os"
+
+	"gopkg.in/yaml.v3"
+)
 
 type Config struct {
 	ListenAddr string `yaml:"listen_addr"`
@@ -27,4 +31,13 @@ func loadConfig(strConf string) (*Config, error) {
 
 	// TODO: Validate this config before it gets returned
 	return newConfig, nil
+}
+
+func loadConfigFromFile(filePath string) (*Config, error) {
+    rawFile, err := os.ReadFile(filePath)
+    if err != nil {
+        return nil, err
+    }
+
+    return loadConfig(string(rawFile))
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
 	"runtime"
@@ -9,36 +10,19 @@ import (
 	"com.wsgateway/streams"
 )
 
+var configPath string
 var config *Config
 
 // adhoc .go workers can append themselves here during init() to extend functionality
 var workersOnBoot = []func(*connectionlookup.ConnectionLookup){}
 
 func main() {
-	log.Printf("Starting wsgateway. GOMAXPROCS=%d NumCPU=%d", runtime.GOMAXPROCS(0), runtime.NumCPU())
+	flag.StringVar(&configPath, "config", "./config.yml", "Configuration file path")
+	flag.Parse()
+	
+	log.Printf("Starting wsgateway. config=%s GOMAXPROCS=%d NumCPU=%d", configPath, runtime.GOMAXPROCS(0), runtime.NumCPU())
 
-	loadedConfig, err := loadConfig(`
-listen_addr: 0.0.0.0:5000
-connection_redis_sync:
-  addr: redis://localhost:6379/0?client_name=wsgateway
-stream_redis:
-  addr: redis://localhost:6379/0?client_name=wsgatewaystream&pool_size=1000
-endpoints:
-  - path: /connect
-    set_tags:
-      foo: bar
-      other: tag
-    stream_include_tags:
-      - foo
-      - group
-
-  - path: /connect/v2
-    set_tags:
-      version: 2
-    stream_include_tags:
-      - version
-      - group
-`)
+	loadedConfig, err := loadConfigFromFile(configPath)
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
 	}
@@ -70,4 +54,3 @@ func startHttpServer() {
 	log.Printf("Listening on %s", listenStr)
 	http.ListenAndServe(listenStr, nil)
 }
-

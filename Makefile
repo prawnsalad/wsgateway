@@ -1,5 +1,5 @@
 run:
-	go run .
+	go run . -config=config.yml
 
 test:
 	go test -v ./...
