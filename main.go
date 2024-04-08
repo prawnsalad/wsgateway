@@ -11,15 +11,18 @@ import (
 
 var config *Config
 
+// adhoc .go workers can append themselves here during init() to extend functionality
+var workersOnBoot = []func(*connectionlookup.ConnectionLookup){}
+
 func main() {
 	log.Printf("Starting wsgateway. GOMAXPROCS=%d NumCPU=%d", runtime.GOMAXPROCS(0), runtime.NumCPU())
 
 	loadedConfig, err := loadConfig(`
 listen_addr: 0.0.0.0:5000
 connection_redis_sync:
-  addr: redis://host.orb.internal:6379/0?client_name=wsgateway
+  addr: redis://localhost:6379/0?client_name=wsgateway
 stream_redis:
-  addr: redis://host.orb.internal:6379/0?client_name=wsgatewaystream&pool_size=1000
+  addr: redis://localhost:6379/0?client_name=wsgatewaystream&pool_size=1000
 endpoints:
   - path: /connect
     set_tags:
@@ -55,8 +58,10 @@ func startHttpServer() {
 		log.Fatal("Error starting: ", err.Error())
 	}
 
-	// TODO: remove these dev helpers
-	runDevHelpers(library)
+	// Allow workers to boot up with the library instance
+	for _, worker := range workersOnBoot {
+		worker(library)
+	}
 
 	applyWsHandlers(library, stream)
 	applyHttpHandlers(library, stream)

@@ -8,6 +8,10 @@ import (
 	"com.wsgateway/connectionlookup"
 )
 
+func init() {
+	workersOnBoot = append(workersOnBoot, runDevHelpers)
+}
+
 func runDevHelpers(library *connectionlookup.ConnectionLookup) {
 	go func() {
 		for {
