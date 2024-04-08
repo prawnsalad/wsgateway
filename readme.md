@@ -1,5 +1,9 @@
 # wsgateway
 
+A performant websocket server that separates the stateful websocket connections away from your applications. Websocket goes in, http/redis/queues go in/out to your applications. Supporting multiple paths to multiple application backends.
+
+For some performance numbers, see [performance.md](resources/performance.md).
+
 ## Building and testing
 
 ~~~shell
