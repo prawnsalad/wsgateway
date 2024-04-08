@@ -37,7 +37,7 @@ func main() {
 	startHttpServer(library, stream)
 }
 
-func initComponents() (*connectionlookup.ConnectionLookup, *streams.StreamRedis){
+func initComponents() (*connectionlookup.ConnectionLookup, streams.Stream){
 	library, err := connectionlookup.NewConnectionLookup(config.ConnectionRedisSync.Addr)
 	if err != nil {
 		log.Fatal("Error starting: ", err.Error())
@@ -57,7 +57,7 @@ func runWorkers(library *connectionlookup.ConnectionLookup) {
 	}
 }
 
-func startHttpServer(library *connectionlookup.ConnectionLookup, stream *streams.StreamRedis) {
+func startHttpServer(library *connectionlookup.ConnectionLookup, stream streams.Stream) {
 	applyWsHandlers(library, stream)
 	applyHttpHandlers(library, stream)
 

@@ -18,7 +18,7 @@ const (
 
 type ConnectionHandlers struct{
 	Libray *connectionlookup.ConnectionLookup
-	Stream *streams.StreamRedis
+	Stream streams.Stream
 	SetTags map[string]string
 }
 

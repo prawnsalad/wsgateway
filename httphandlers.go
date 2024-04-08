@@ -13,7 +13,7 @@ import (
 	"github.com/lxzan/gws"
 )
 
-func applyWsHandlers(library *connectionlookup.ConnectionLookup, stream *streams.StreamRedis) {
+func applyWsHandlers(library *connectionlookup.ConnectionLookup, stream streams.Stream) {
 	for _, c := range config.Endpoints {
 		applyWsEndpointHandlers(&EndpointConfig{
 			Path: c.Path,
@@ -28,7 +28,7 @@ type EndpointConfig struct {
 	SetTags map[string]string
 	StreamIncludeTags []string
 }
-func applyWsEndpointHandlers(conf *EndpointConfig, library *connectionlookup.ConnectionLookup, stream *streams.StreamRedis) {
+func applyWsEndpointHandlers(conf *EndpointConfig, library *connectionlookup.ConnectionLookup, stream streams.Stream) {
 	log.Printf("Creating websocket endpoint at path %s", conf.Path)
 
 	wsHandlers := &ConnectionHandlers{
@@ -53,7 +53,7 @@ func applyWsEndpointHandlers(conf *EndpointConfig, library *connectionlookup.Con
 	})
 }
 
-func applyHttpHandlers(library *connectionlookup.ConnectionLookup, stream *streams.StreamRedis) {
+func applyHttpHandlers(library *connectionlookup.ConnectionLookup, stream streams.Stream) {
 	http.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Request: /status")
 

@@ -6,6 +6,11 @@ import (
 	"com.wsgateway/connectionlookup"
 )
 
+type Stream interface {
+	PublishConnection(con *connectionlookup.Connection, event StreamEvent)
+	PublishMessage(con *connectionlookup.Connection, messageType MessageType, message []byte)
+}
+
 type StreamEvent string
 type MessageType string
 
