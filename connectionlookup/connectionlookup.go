@@ -1,7 +1,6 @@
 package connectionlookup
 
 import (
-	"fmt"
 	"maps"
 	"sync"
 
@@ -97,7 +96,6 @@ func (c *ConnectionLookup) SetKeys(con *Connection, keys map[string]string) {
 				continue
 			}
 
-			fmt.Println("Adding new key list", key)
 			keyList = make(map[string]*ConnectionLockList)
 			c.tree[key] = keyList
 		}
@@ -121,14 +119,12 @@ func (c *ConnectionLookup) SetKeys(con *Connection, keys map[string]string) {
 				
 				// Cleanup empty lists
 				if len(checkingValList.ConnectionList) == 0 {
-					fmt.Println("Removing key value list", key, checkingVal)
 					c.treeLock.Lock() // < TODO: Why this lock treelock?
 					delete(keyList, checkingVal)
 					c.treeLock.Unlock()
 				}
 
 				if len(c.tree[key]) == 0 {
-					fmt.Println("Removing key list", key)
 					c.treeLock.Lock()
 					delete(c.tree, key)
 					c.treeLock.Unlock()
@@ -189,13 +185,11 @@ func (c *ConnectionLookup) RemoveConnection(con *Connection) {
 
 		// Cleanup any empty lists
 		if len(keyval.ConnectionList) == 0 {
-			fmt.Println("deleting val list", keyval.Key, keyval.KeyVal)
 			delete(c.tree[keyval.Key], keyval.KeyVal)
 		}
 
 		// Cleanup any empty lists
 		if len(c.tree[keyval.Key]) == 0 {
-			fmt.Println("deleting key list", keyval.Key)
 			delete(c.tree, keyval.Key)
 		}
 
