@@ -2,9 +2,11 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"runtime"
+	"syscall"
 
 	"com.wsgateway/connectionlookup"
 	"com.wsgateway/streams"
@@ -19,8 +21,10 @@ var workersOnBoot = []func(*connectionlookup.ConnectionLookup){}
 func main() {
 	flag.StringVar(&configPath, "config", "./config.yml", "Configuration file path")
 	flag.Parse()
+
+	noFiles := getMaxUlimit()
 	
-	log.Printf("Starting wsgateway. config=%s GOMAXPROCS=%d NumCPU=%d", configPath, runtime.GOMAXPROCS(0), runtime.NumCPU())
+	log.Printf("Starting wsgateway. config=%s NOFILES=%d GOMAXPROCS=%d NUMCPU=%d", configPath, noFiles, runtime.GOMAXPROCS(0), runtime.NumCPU())
 
 	loadedConfig, err := loadConfigFromFile(configPath)
 	if err != nil {
@@ -60,4 +64,13 @@ func startHttpServer(library *connectionlookup.ConnectionLookup, stream *streams
 	listenStr := config.ListenAddr
 	log.Printf("Listening on %s", listenStr)
 	http.ListenAndServe(listenStr, nil)
+}
+
+func getMaxUlimit() uint64 {
+    var rLimit syscall.Rlimit
+    err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit)
+    if err != nil {
+        fmt.Errorf("Error Getting Rlimit %v", err)
+    }
+	return rLimit.Max
 }
