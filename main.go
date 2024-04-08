@@ -24,7 +24,7 @@ func main() {
 
 	noFiles := getMaxUlimit()
 	
-	log.Printf("Starting wsgateway. config=%s NOFILES=%d GOMAXPROCS=%d NUMCPU=%d", configPath, noFiles, runtime.GOMAXPROCS(0), runtime.NumCPU())
+	log.Printf("Starting wsgateway. CONFIG=%s NOFILES=%d GOMAXPROCS=%d NUMCPU=%d", configPath, noFiles, runtime.GOMAXPROCS(0), runtime.NumCPU())
 
 	loadedConfig, err := loadConfigFromFile(configPath)
 	if err != nil {

@@ -21,7 +21,7 @@ ok      com.wsgateway/connectionlookup  (cached)
 # Run from code
 $ make run
 go run .
-2024/04/08 22:21:15 Starting wsgateway. config=config.yml NOFILES=1048576 GOMAXPROCS=10 NumCPU=10
+2024/04/08 22:21:15 Starting wsgateway. CONFIG=config.yml NOFILES=1048576 GOMAXPROCS=10 NUMCPU=10
 2024/04/08 22:21:15 Connecting to redis for connection data at localhost:6379
 2024/04/08 22:21:15 Connecting to redis for streaming at localhost:6379
 2024/04/08 22:21:15 Creating websocket endpoint at path /connect
@@ -29,7 +29,7 @@ go run .
 2024/04/08 22:21:15 Listening on 0.0.0.0:5000
 ~~~
 
-When running import bits of information is given that will impact your system:
+On startup important bits of information is reported that will impact your system:
 - config - The config file being loaded
 - NOFILES - The max number of open files wsgateway can open. Change this via your OS ulimits
 - GOMAXPROCS - Max number of goroutines able to be used. Usually the same number of CPU cores
