@@ -42,7 +42,7 @@ func (s *StreamRedis) PublishConnection(con *connectionlookup.Connection, event 
 		Values: map[string]string{
 			"connection": con.Id,
 			"action": event.String(),
-			"tags": makeTagString(con),
+			"tags": makeTagString(*con),
 		},
 	})
 
@@ -58,7 +58,7 @@ func (s *StreamRedis) PublishMessage(con *connectionlookup.Connection, messageTy
 			"connection": con.Id,
 			"action": EventMessage.String(),
 			"type": messageType.String(),
-			"tags": makeTagString(con),
+			"tags": makeTagString(*con),
 		},
 	})
 
