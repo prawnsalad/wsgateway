@@ -59,6 +59,7 @@ func (s *StreamRedis) PublishMessage(con *connectionlookup.Connection, messageTy
 			"action": EventMessage.String(),
 			"type": messageType.String(),
 			"tags": makeTagString(*con),
+			"message": string(message),
 		},
 	})
 
