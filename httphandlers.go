@@ -1,7 +1,7 @@
 package main
 
 import (
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -104,7 +104,7 @@ func applyHttpHandlers(library *connectionlookup.ConnectionLookup, stream stream
 			return
 		}
 
-		postBody, err := ioutil.ReadAll(r.Body)
+		postBody, err := io.ReadAll(r.Body)
 		if err != nil {
 			log.Println("Error reading post body in settags request: " + err.Error())
 			w.WriteHeader(503)
@@ -142,7 +142,7 @@ func applyHttpHandlers(library *connectionlookup.ConnectionLookup, stream stream
 
 		// TODO: Find a way to stream this to websockets if it's large so we
 		//       don't use up all memory
-		data, err := ioutil.ReadAll(r.Body)
+		data, err := io.ReadAll(r.Body)
 		if err != nil {
 			log.Println("Error reading post body in send request: " + err.Error())
 			w.WriteHeader(503)
@@ -154,7 +154,6 @@ func applyHttpHandlers(library *connectionlookup.ConnectionLookup, stream stream
 			wsOpcode = gws.OpcodeBinary
 		}
 
-		log.Printf("Sending message of size %d to %d connections", len(data), len(cons))
 		broadcaster := gws.NewBroadcaster(wsOpcode, data)
 		defer broadcaster.Close()
 
