@@ -17,3 +17,6 @@ bin/
 
 # Go workspace file
 go.work
+
+# test & demo projects
+node_modules/

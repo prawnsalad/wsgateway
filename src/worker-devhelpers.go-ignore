@@ -54,7 +54,10 @@ func workerSend1000Sec(workerId int, library *connectionlookup.ConnectionLookup)
 		//time.Sleep(time.Second / 10000)
 		time.Sleep(time.Nanosecond * (1000000 / 10))
 
+		startLookup := time.Now()
 		cons := library.GetConnectionsWithKeys(map[string]string{"foo": "bar"})
+		lookupLen := time.Since(startLookup)
+
 		start := time.Now()
 		for _, conn := range cons {
 			conn.Socket.WriteString("routine message")
@@ -63,7 +66,7 @@ func workerSend1000Sec(workerId int, library *connectionlookup.ConnectionLookup)
 		cnt++
 		if cnt == 1000 {
 			cnt = 0
-			log.Printf("[%d] Sending %d messages took %v\n", workerId, len(cons), time.Since(start))
+			log.Printf("[%d] sendloop - cons: %d Lookup: %v Writing: %v\n", workerId, len(cons), lookupLen, time.Since(start))
 		}
 	}
 }

@@ -46,8 +46,12 @@ const (
 
 // These connection tags will be included in any stream messages
 var includeTags = map[string]bool{"foo":true, "group":true}
-func makeTagString(con connectionlookup.Connection) string {
+func makeTagString(con *connectionlookup.Connection) string {
 	tags := url.Values{}
+
+	con.KeyValsLock.RLock()
+	defer con.KeyValsLock.RUnlock()
+
 	for _, tag := range con.KeyVals {
 		_, exists := includeTags[tag.Key]
 		if exists {

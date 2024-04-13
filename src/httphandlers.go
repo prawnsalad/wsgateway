@@ -15,10 +15,20 @@ import (
 
 func applyWsHandlers(library *connectionlookup.ConnectionLookup, stream streams.Stream) {
 	for _, c := range config.Endpoints {
+
+		// individual endpoint MaxMessageSizeKb takes precedence over global
+		maxPayloadSize := 0
+		if c.MaxMessageSizeKb > 0 {
+			maxPayloadSize = c.MaxMessageSizeKb * 1024
+		} else {
+			maxPayloadSize = config.MaxMessageSizeKb * 1024
+		}
+
 		applyWsEndpointHandlers(&EndpointConfig{
 			Path: c.Path,
 			SetTags: c.SetTags,
 			StreamIncludeTags: c.StreamIncludeTags,
+			ReadMaxPayloadSize: maxPayloadSize,
 		}, library, stream)
 	}
 }
@@ -27,6 +37,7 @@ type EndpointConfig struct {
 	Path string
 	SetTags map[string]string
 	StreamIncludeTags []string
+	ReadMaxPayloadSize int
 }
 func applyWsEndpointHandlers(conf *EndpointConfig, library *connectionlookup.ConnectionLookup, stream streams.Stream) {
 	log.Printf("Creating websocket endpoint at path %s", conf.Path)
@@ -40,6 +51,7 @@ func applyWsEndpointHandlers(conf *EndpointConfig, library *connectionlookup.Con
 		ReadAsyncEnabled: true,         // Parallel message processing
 		CompressEnabled:  true,         // Enable compression
 		Recovery:         gws.Recovery, // Exception recovery
+		ReadMaxPayloadSize: conf.ReadMaxPayloadSize,
 	})
 
 	http.HandleFunc(conf.Path, func(writer http.ResponseWriter, request *http.Request) {

@@ -10,7 +10,10 @@ import (
 type Connection struct {
 	Id string
 	Socket *gws.Conn
+	// Reference the key/val lists this connection is in. Only used
+	// so this connection knows what key/val pairs it has.
 	KeyVals map[int]*ConnectionLockList
+	KeyValsLock sync.RWMutex
 }
 func NewConnection(id string, socket *gws.Conn) *Connection {
 	return &Connection{
@@ -131,7 +134,9 @@ func (c *ConnectionLookup) SetKeys(con *Connection, keys map[string]string) {
 				}
 			}
 
+			con.KeyValsLock.Lock()
 			delete(con.KeyVals, c.strings.Get(key))
+			con.KeyValsLock.Unlock()
 
 			continue
 		}
@@ -150,7 +155,10 @@ func (c *ConnectionLookup) SetKeys(con *Connection, keys map[string]string) {
 		valList.ConnectionList[con.Id] = con
 		valList.Lock.Unlock()
 
+		// Let the connection itself know what key/val pairs it has
+		con.KeyValsLock.Lock()
 		con.KeyVals[c.strings.Get(key)] = valList
+		con.KeyValsLock.Unlock()
 	}
 
 	if c.redisSync != nil && len(newKeys) > 0 {
@@ -177,6 +185,9 @@ func (c *ConnectionLookup) RemoveConnection(con *Connection) {
 	c.connectionsLock.Lock()
 	delete(c.connections, con.Id)
 	c.connectionsLock.Unlock()
+
+	con.KeyValsLock.Lock()
+	defer con.KeyValsLock.Unlock()
 
 	c.treeLock.Lock()
 	for _, keyval := range con.KeyVals {

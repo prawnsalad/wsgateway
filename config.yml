@@ -3,6 +3,7 @@ connection_redis_sync:
   addr: redis://localhost:6379/0?client_name=wsgateway
 stream_redis:
   addr: redis://localhost:6379/0?client_name=wsgatewaystream&pool_size=1000
+max_message_size_kb: 1024
 endpoints:
   - path: /connect
     set_tags:
