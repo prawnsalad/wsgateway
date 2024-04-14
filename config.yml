@@ -12,6 +12,7 @@ endpoints:
     stream_include_tags:
       - foo
       - group
+    max_message_size_kb: 2048
 
   - path: /connect/v2
     set_tags:
