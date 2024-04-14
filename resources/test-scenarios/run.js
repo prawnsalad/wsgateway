@@ -9,16 +9,16 @@ const testsPath = "./scenarios";
 
   const files = await readdir(testsPath);
   for (const file of files) {
-    if (file === "bootstrap.js") {
+    if (!file.startsWith("run-")) {
       continue;
     }
     scripts.push(file);
   }
 
-  await runConcurrently(scripts, 5);
+  await runConcurrently(scripts, 50);
 })();
 
-async function runConcurrently(scripts, numConcurrent = 10) {
+async function runConcurrently(scripts, numConcurrent) {
   let running = 0;
 
   let currentScriptIdx = -1;
