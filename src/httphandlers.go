@@ -166,13 +166,7 @@ func applyHttpHandlers(library *connectionlookup.ConnectionLookup, stream stream
 			wsOpcode = gws.OpcodeBinary
 		}
 
-		broadcaster := gws.NewBroadcaster(wsOpcode, data)
-		defer broadcaster.Close()
-
-		for _, con := range cons {
-			broadcaster.Broadcast(con.Socket)
-		}
-
+		sendMessageToConnections(cons, wsOpcode, data)
 		w.Write([]byte(strconv.Itoa(len(cons))))
 	})
 }

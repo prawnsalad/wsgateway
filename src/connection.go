@@ -21,6 +21,8 @@ type ConnectionHandlers struct{
 }
 
 func (c *ConnectionHandlers) OnOpen(socket *gws.Conn) {
+	counterConnections.Inc()
+
 	_ = socket.SetDeadline(time.Now().Add(idleTimeout))
 
 	id := uuid.NewString()
@@ -32,6 +34,8 @@ func (c *ConnectionHandlers) OnOpen(socket *gws.Conn) {
 }
 
 func (c *ConnectionHandlers) OnClose(socket *gws.Conn, err error) {
+	counterDisconnections.Inc()
+
 	storeCon, isOk := socket.Session().Load("con")
 	if !isOk {
 		log.Println("Error: Socket missing connection instance")
@@ -53,6 +57,8 @@ func (c *ConnectionHandlers) OnPong(socket *gws.Conn, payload []byte) {
 }
 
 func (c *ConnectionHandlers) OnMessage(socket *gws.Conn, message *gws.Message) {
+	counterClientRecievedMsgs.Inc()
+
 	_ = socket.SetDeadline(time.Now().Add(idleTimeout))
 
 	storeCon, isOk := socket.Session().Load("con")
@@ -69,4 +75,15 @@ func (c *ConnectionHandlers) OnMessage(socket *gws.Conn, message *gws.Message) {
 
 	c.Stream.PublishMessage(con, mType, message.Bytes())
 	message.Close()
+}
+
+func sendMessageToConnections(conns []*connectionlookup.Connection, payloadType gws.Opcode, payload []byte) {
+	broadcaster := gws.NewBroadcaster(payloadType, payload)
+	defer broadcaster.Close()
+
+	for _, con := range conns {
+		broadcaster.Broadcast(con.Socket)
+	}
+
+	counterClientSentMsgs.Add(float64(len(conns)))
 }
