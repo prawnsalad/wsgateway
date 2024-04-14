@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"com.wsgateway/connectionlookup"
+	"github.com/lxzan/gws"
 )
 
 func init() {
@@ -59,9 +60,7 @@ func workerSend1000Sec(workerId int, library *connectionlookup.ConnectionLookup)
 		lookupLen := time.Since(startLookup)
 
 		start := time.Now()
-		for _, conn := range cons {
-			conn.Socket.WriteString("routine message")
-		}
+		sendMessageToConnections(cons, gws.OpcodeText, []byte("routine message"))
 
 		cnt++
 		if cnt == 1000 {

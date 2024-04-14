@@ -21,7 +21,10 @@ type Config struct {
 		SetTags map[string]string `yaml:"set_tags"`
 		StreamIncludeTags []string `yaml:"stream_include_tags"`
 		MaxMessageSizeKb int `yaml:"max_message_size_kb,omitempty"`
-	} `yaml:"endpoints"` 
+	} `yaml:"endpoints"`
+	Prometheus struct {
+		Enabled bool `yaml:"enabled"`
+	} `yaml:"prometheus"`
 }
 
 func loadConfig(strConf string) (*Config, error) {

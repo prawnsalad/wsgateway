@@ -1,11 +1,13 @@
 package main
 
 import (
+	"net/http"
 	"time"
 
 	"com.wsgateway/connectionlookup"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var counterClientSentMsgs = promauto.NewCounter(prometheus.CounterOpts{
@@ -33,15 +35,19 @@ var gaugeConnections = promauto.NewGauge(prometheus.GaugeOpts{
 	Help: "The number of active websocket connections",
 })
 
-func init() {
-	workersOnBoot = append(workersOnBoot, func (library *connectionlookup.ConnectionLookup) {
-		go func() {
-			for {
-				numCons := library.NumConnections()
-				gaugeConnections.Set(float64(numCons))
+func initMetrics(library *connectionlookup.ConnectionLookup) {
+	if !config.Prometheus.Enabled {
+		return
+	}
 
-				time.Sleep(1 * time.Second)
-			}
-		}()
-	})
+	http.Handle("/metrics", promhttp.Handler())
+
+	go func() {
+		for {
+			numCons := library.NumConnections()
+			gaugeConnections.Set(float64(numCons))
+
+			time.Sleep(1 * time.Second)
+		}
+	}()
 }

@@ -9,7 +9,6 @@ import (
 
 	"com.wsgateway/connectionlookup"
 	"com.wsgateway/streams"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var configPath string
@@ -64,7 +63,7 @@ func startHttpServer(library *connectionlookup.ConnectionLookup, stream streams.
 	applyWsHandlers(library, stream)
 	applyHttpHandlers(library, stream)
 
-	http.Handle("/metrics", promhttp.Handler())
+	initMetrics(library)
 
 	listenStr := config.ListenAddr
 	log.Printf("Listening on %s", listenStr)

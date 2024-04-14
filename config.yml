@@ -19,3 +19,5 @@ endpoints:
     stream_include_tags:
       - version
       - group
+prometheus:
+  enabled: true
