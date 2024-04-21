@@ -66,6 +66,7 @@ func startHttpServer(library *connectionlookup.ConnectionLookup, stream streams.
 	initMetrics(library)
 
 	listenStr := config.ListenAddr
+	log.Printf("Internal whitelist %v", config.InternalEndpointWhitelist)
 	log.Printf("Listening on %s", listenStr)
 	http.ListenAndServe(listenStr, nil)
 }

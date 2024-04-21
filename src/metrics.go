@@ -1,13 +1,11 @@
 package main
 
 import (
-	"net/http"
 	"time"
 
 	"com.wsgateway/connectionlookup"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var counterClientSentMsgs = promauto.NewCounter(prometheus.CounterOpts{
@@ -39,8 +37,6 @@ func initMetrics(library *connectionlookup.ConnectionLookup) {
 	if !config.Prometheus.Enabled {
 		return
 	}
-
-	http.Handle("/metrics", promhttp.Handler())
 
 	go func() {
 		for {

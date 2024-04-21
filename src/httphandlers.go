@@ -3,6 +3,7 @@ package main
 import (
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 	"com.wsgateway/connectionlookup"
 	"com.wsgateway/streams"
 	"github.com/lxzan/gws"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func applyWsHandlers(library *connectionlookup.ConnectionLookup, stream streams.Stream) {
@@ -66,7 +68,12 @@ func applyWsEndpointHandlers(conf *EndpointConfig, library *connectionlookup.Con
 }
 
 func applyHttpHandlers(library *connectionlookup.ConnectionLookup, stream streams.Stream) {
-	http.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
+	internal := http.NewServeMux()
+	http.Handle("/", middlewareAuthInternal(internal))
+
+	internal.Handle("/metrics", promhttp.Handler())
+
+	internal.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Request: /status")
 
 		w.Header().Add("Content-Type", "text/plain");
@@ -87,7 +94,7 @@ func applyHttpHandlers(library *connectionlookup.ConnectionLookup, stream stream
 		}
 	})
 
-	http.HandleFunc("/tree", func(w http.ResponseWriter, r *http.Request) {
+	internal.HandleFunc("/tree", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Request: /tree")
 
 		w.Header().Add("Content-Type", "text/plain");
@@ -105,7 +112,7 @@ func applyHttpHandlers(library *connectionlookup.ConnectionLookup, stream stream
 		}
 	})
 
-	http.HandleFunc("/settags", func(w http.ResponseWriter, r *http.Request) {
+	internal.HandleFunc("/settags", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
 			return
 		}
@@ -141,7 +148,7 @@ func applyHttpHandlers(library *connectionlookup.ConnectionLookup, stream stream
 		w.Write([]byte(strconv.Itoa(len(cons))))
 	})
 
-	http.HandleFunc("/send", func(w http.ResponseWriter, r *http.Request) {
+	internal.HandleFunc("/send", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
 			return
 		}
@@ -168,6 +175,25 @@ func applyHttpHandlers(library *connectionlookup.ConnectionLookup, stream stream
 
 		sendMessageToConnections(cons, wsOpcode, data)
 		w.Write([]byte(strconv.Itoa(len(cons))))
+	})
+}
+
+func middlewareAuthInternal(handler http.Handler) http.Handler {
+	// If unauthorized, purposelly don't return anything, just ignore the request
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		host, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			log.Printf("Unauthorized access attempt from an unknown host: %s", host)
+			return
+		}
+
+		remoteAddr := net.ParseIP(host)
+		for _, internalRange := range config.InternalEndpointWhitelistInet {
+			if internalRange.Contains(remoteAddr) {
+				handler.ServeHTTP(w, r)
+				return
+			}
+		}
 	})
 }
 
