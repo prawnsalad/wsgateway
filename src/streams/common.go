@@ -2,8 +2,11 @@ package streams
 
 import (
 	"net/url"
+	"regexp"
+	"strings"
 
 	"com.wsgateway/connectionlookup"
+	"github.com/tidwall/gjson"
 )
 
 type Stream interface {
@@ -60,4 +63,41 @@ func makeTagString(con *connectionlookup.Connection) string {
 	}
 
 	return tags.Encode()
+}
+
+var r, _ = regexp.Compile(`{[a-zA-Z0-9_\-:]+}`)
+// Starting with `start`, replace any {variables} in `json` with the values from `vars`
+// eg: "action-{command:default}" = "action-default", or if vars contains "command":"join" then "action-join"
+func replaceConnectionVars(start string, json string, vars map[string]string) string {
+	if !strings.Contains(start, "{") {
+		return start
+	}
+
+	matches := r.FindAll([]byte(start), -1)
+	if matches == nil {
+		return start
+	}
+
+	for _, match := range matches {
+		varName := string(match)[1:len(match)-1]
+		defaultVal := "_"
+
+		if strings.Contains(varName, ":") {
+			parts := strings.SplitN(varName, ":", 2)
+			varName = parts[0]
+			defaultVal = parts[1]
+		}
+
+		jsonPath := vars[varName]
+		value := gjson.Get(json, jsonPath)
+		val := value.String()
+
+		// If we didn't find this variable, fallback to an underscore
+		if val == "" {
+			val = defaultVal
+		}
+		start = strings.ReplaceAll(start, string(match), val)
+	}
+
+	return start
 }

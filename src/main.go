@@ -45,7 +45,7 @@ func initComponents() (*connectionlookup.ConnectionLookup, streams.Stream){
 		log.Fatal("Error starting: ", err.Error())
 	}
 
-	stream, err := streams.NewStreamRedis(config.StreamRedis.Addr)
+	stream, err := streams.NewStreamRedis(config.StreamRedis.Addr, config.StreamRedis.StreamName)
 	if err != nil {
 		log.Fatal("Error starting: ", err.Error())
 	}

@@ -14,12 +14,15 @@ type Connection struct {
 	// so this connection knows what key/val pairs it has.
 	KeyVals map[int]*ConnectionLockList
 	KeyValsLock sync.RWMutex
+
+	JsonExtractVars *map[string]string
 }
 func NewConnection(id string, socket *gws.Conn) *Connection {
 	return &Connection{
 		Id: id,
 		Socket: socket,
 		KeyVals: make(map[int]*ConnectionLockList),
+		JsonExtractVars: nil,
 	}
 }
 

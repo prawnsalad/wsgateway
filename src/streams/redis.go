@@ -14,9 +14,10 @@ var ctx = context.Background()
 
 type StreamRedis struct {
 	client *redis.Client
+	streamName string
 }
 
-func NewStreamRedis(redisUrl string) (*StreamRedis, error) {
+func NewStreamRedis(redisUrl string, streamName string) (*StreamRedis, error) {
     opts, err := redis.ParseURL(redisUrl)
     if err != nil {
         return nil, err
@@ -31,6 +32,7 @@ func NewStreamRedis(redisUrl string) (*StreamRedis, error) {
 
 	sync := &StreamRedis{
 		client: rClient,
+		streamName: streamName,
 	}
 
     return sync, nil
@@ -52,14 +54,17 @@ func (s *StreamRedis) PublishConnection(con *connectionlookup.Connection, event 
 }
 
 func (s *StreamRedis) PublishMessage(con *connectionlookup.Connection, messageType MessageType, message []byte) {
+	msgStr := string(message)
+	streamName := replaceConnectionVars(s.streamName, msgStr, *con.JsonExtractVars)
+
 	res := s.client.XAdd(ctx, &redis.XAddArgs{
-		Stream: "connectionevents",
+		Stream: streamName,
 		Values: map[string]string{
 			"connection": con.Id,
 			"action": EventMessage.String(),
 			"type": messageType.String(),
 			"tags": makeTagString(con),
-			"message": string(message),
+			"message": msgStr,
 		},
 	})
 

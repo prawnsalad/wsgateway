@@ -4,6 +4,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"regexp"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -16,6 +17,7 @@ type Config struct {
 	} `yaml:"connection_redis_sync"`
 	StreamRedis struct {
 		Addr string `yaml:"addr"`
+		StreamName string `yaml:"stream_name"`
 	} `yaml:"stream_redis"`
 	MaxMessageSizeKb int `yaml:"max_message_size_kb,omitempty"`
 	InternalEndpointWhitelist []string `yaml:"internal_endpoint_access_whitelist"`
@@ -25,6 +27,7 @@ type Config struct {
 		SetTags map[string]string `yaml:"set_tags"`
 		StreamIncludeTags []string `yaml:"stream_include_tags"`
 		MaxMessageSizeKb int `yaml:"max_message_size_kb,omitempty"`
+		JsonExtractVars map[string]string `yaml:"json_extract_vars"`
 	} `yaml:"endpoints"`
 	Prometheus struct {
 		Enabled bool `yaml:"enabled"`
@@ -81,6 +84,13 @@ func cleanConfig(config *Config) error {
 		config.InternalEndpointWhitelistInet = append(config.InternalEndpointWhitelistInet, *ipNet)
 	}
 
+	if config.StreamRedis.Addr == "" {
+		config.StreamRedis.Addr = "redis://localhost:6379/0?client_name=wsgatewaystream&pool_size=1000"
+	}
+	if config.StreamRedis.StreamName == "" {
+		config.StreamRedis.StreamName = "connectionevents"
+	}
+
 	for _, endpoint := range config.Endpoints {
 		if endpoint.Path == "" {
 			endpoint.Path = "/ws"
@@ -90,6 +100,17 @@ func cleanConfig(config *Config) error {
 		}
 		if endpoint.StreamIncludeTags == nil {
 			endpoint.StreamIncludeTags = []string{}
+		}
+		if endpoint.JsonExtractVars == nil {
+			endpoint.JsonExtractVars = map[string]string{}
+		} else {
+			r, _ := regexp.Compile(`^[a-zA-Z0-9_]+$`)
+			for key := range endpoint.JsonExtractVars {
+				if !r.Match([]byte(key)) {
+					log.Printf("Ignoring invalid json_extract_vars key: %s", key)
+					delete(endpoint.JsonExtractVars, key)
+				}
+			}
 		}
 	}
 

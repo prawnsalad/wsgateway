@@ -31,6 +31,7 @@ func applyWsHandlers(library *connectionlookup.ConnectionLookup, stream streams.
 			SetTags: c.SetTags,
 			StreamIncludeTags: c.StreamIncludeTags,
 			ReadMaxPayloadSize: maxPayloadSize,
+			JsonExtractVars: c.JsonExtractVars,
 		}, library, stream)
 	}
 }
@@ -40,6 +41,7 @@ type EndpointConfig struct {
 	SetTags map[string]string
 	StreamIncludeTags []string
 	ReadMaxPayloadSize int
+	JsonExtractVars map[string]string
 }
 func applyWsEndpointHandlers(conf *EndpointConfig, library *connectionlookup.ConnectionLookup, stream streams.Stream) {
 	log.Printf("Creating websocket endpoint at path %s", conf.Path)
@@ -48,6 +50,7 @@ func applyWsEndpointHandlers(conf *EndpointConfig, library *connectionlookup.Con
 		Libray: library,
 		Stream: stream,
 		SetTags: conf.SetTags,
+		JsonExtractVars: conf.JsonExtractVars,
 	}
 	upgrader := gws.NewUpgrader(wsHandlers, &gws.ServerOption{
 		ReadAsyncEnabled: true,         // Parallel message processing

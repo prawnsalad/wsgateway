@@ -18,6 +18,7 @@ type ConnectionHandlers struct{
 	Libray *connectionlookup.ConnectionLookup
 	Stream streams.Stream
 	SetTags map[string]string
+	JsonExtractVars map[string]string
 }
 
 func (c *ConnectionHandlers) OnOpen(socket *gws.Conn) {
@@ -27,6 +28,7 @@ func (c *ConnectionHandlers) OnOpen(socket *gws.Conn) {
 
 	id := uuid.NewString()
 	con := connectionlookup.NewConnection(id, socket)
+	con.JsonExtractVars = &c.JsonExtractVars
 	socket.Session().Store("con", con)
 
 	c.Libray.AddConnection(con, c.SetTags)
