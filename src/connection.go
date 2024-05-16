@@ -15,10 +15,11 @@ const (
 )
 
 type ConnectionHandlers struct {
-	Libray          *connectionlookup.ConnectionLookup
-	Stream          streams.Stream
-	SetTags         map[string]string
-	JsonExtractVars map[string]string
+	Libray            *connectionlookup.ConnectionLookup
+	Stream            streams.Stream
+	SetTags           map[string]string
+	StreamIncludeTags []string
+	JsonExtractVars   map[string]string
 }
 
 func (c *ConnectionHandlers) OnOpen(socket *gws.Conn) {
@@ -28,6 +29,7 @@ func (c *ConnectionHandlers) OnOpen(socket *gws.Conn) {
 
 	id := uuid.NewString()
 	con := connectionlookup.NewConnection(id, socket)
+	con.StreamIncludeTags = c.StreamIncludeTags
 	con.JsonExtractVars = &c.JsonExtractVars
 	socket.Session().Store("con", con)
 
@@ -69,6 +71,8 @@ func (c *ConnectionHandlers) OnMessage(socket *gws.Conn, message *gws.Message) {
 		return
 	}
 	con := storeCon.(*connectionlookup.Connection)
+
+	log.Printf("Received message", len(con.KeyVals), message)
 
 	mType := streams.MessageText
 	if message.Opcode == gws.OpcodeBinary {

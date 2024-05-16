@@ -8,38 +8,41 @@ import (
 )
 
 type Connection struct {
-	Id string
+	Id     string
 	Socket *gws.Conn
 	// Reference the key/val lists this connection is in. Only used
 	// so this connection knows what key/val pairs it has.
-	KeyVals map[int]*ConnectionLockList
+	KeyVals     map[int]*ConnectionLockList
 	KeyValsLock sync.RWMutex
 
-	JsonExtractVars *map[string]string
+	StreamIncludeTags []string
+	JsonExtractVars   *map[string]string
 }
+
 func NewConnection(id string, socket *gws.Conn) *Connection {
 	return &Connection{
-		Id: id,
-		Socket: socket,
-		KeyVals: make(map[int]*ConnectionLockList),
-		JsonExtractVars: nil,
+		Id:                id,
+		Socket:            socket,
+		KeyVals:           make(map[int]*ConnectionLockList),
+		StreamIncludeTags: nil,
+		JsonExtractVars:   nil,
 	}
 }
 
 type ConnectionList map[string]*Connection
 type ConnectionLockList struct {
 	ConnectionList
-	Key string
+	Key    string
 	KeyVal string
-	Lock sync.RWMutex
+	Lock   sync.RWMutex
 }
 
 type ConnectionLookup struct {
-	strings *StringMap
+	strings   *StringMap
 	redisSync *RedisSync
 
 	// Fast lookup of ID > connection
-	connections map[string]*Connection
+	connections     map[string]*Connection
 	connectionsLock sync.RWMutex
 
 	/*
@@ -58,7 +61,7 @@ type ConnectionLookup struct {
 				Val2 >
 					connectionId: connection
 	*/
-	tree map[string]map[string]*ConnectionLockList
+	tree     map[string]map[string]*ConnectionLockList
 	treeLock sync.RWMutex
 }
 
@@ -73,10 +76,10 @@ func NewConnectionLookup(redisAddr string) (*ConnectionLookup, error) {
 	}
 
 	lookup := &ConnectionLookup{
-		strings: NewStringMap(),
+		strings:     NewStringMap(),
 		connections: make(map[string]*Connection),
-		tree: make(map[string]map[string]*ConnectionLockList),
-		redisSync: sync,
+		tree:        make(map[string]map[string]*ConnectionLockList),
+		redisSync:   sync,
 	}
 
 	return lookup, nil
@@ -93,7 +96,7 @@ func (c *ConnectionLookup) SetKeys(con *Connection, keys map[string]string) {
 		} else {
 			delKeys = append(delKeys, key)
 		}
-	
+
 		c.treeLock.Lock()
 		keyList, isOk := c.tree[key]
 		if !isOk {
@@ -122,7 +125,7 @@ func (c *ConnectionLookup) SetKeys(con *Connection, keys map[string]string) {
 				checkingValList.Lock.Lock()
 				delete(checkingValList.ConnectionList, con.Id)
 				checkingValList.Lock.Unlock()
-				
+
 				// Cleanup empty lists
 				if len(checkingValList.ConnectionList) == 0 {
 					c.treeLock.Lock() // < TODO: Why this lock treelock?
@@ -147,8 +150,8 @@ func (c *ConnectionLookup) SetKeys(con *Connection, keys map[string]string) {
 		valList, valListExist := keyList[keyVal]
 		if !valListExist {
 			valList = &ConnectionLockList{
-				Key: key,
-				KeyVal: keyVal,
+				Key:            key,
+				KeyVal:         keyVal,
 				ConnectionList: make(ConnectionList),
 			}
 			keyList[keyVal] = valList
@@ -228,7 +231,7 @@ func (c *ConnectionLookup) GetConnectionById(id string) (*Connection, bool) {
 }
 
 // Find all connections that have all the given keys
-func (c *ConnectionLookup) GetConnectionsWithKeys(keys map[string]string) []*Connection{
+func (c *ConnectionLookup) GetConnectionsWithKeys(keys map[string]string) []*Connection {
 	// Keep track of how many key=val combos were matched against a connection. If a connection
 	// has len(keys) matches at the end, then we know it matched all the keys
 	connections := make(map[*Connection]int)
@@ -273,7 +276,7 @@ func (c *ConnectionLookup) GetAllKeys() []string {
 	}
 	c.treeLock.RUnlock()
 
-	return keys;
+	return keys
 }
 
 func (c *ConnectionLookup) GetAllKeysAndValue() map[string][]string {
@@ -290,7 +293,7 @@ func (c *ConnectionLookup) GetAllKeysAndValue() map[string][]string {
 	}
 	c.treeLock.RUnlock()
 
-	return keys;
+	return keys
 }
 
 func (c *ConnectionLookup) NumConnections() int {
@@ -327,9 +330,9 @@ func (c *ConnectionLookup) DumpConnections() []map[string]string {
 				}
 			}
 		}
-		
+
 		entries = append(entries, entry)
 	}
 
-	return entries;
+	return entries
 }

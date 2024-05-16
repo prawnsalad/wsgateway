@@ -3,6 +3,7 @@ package streams
 import (
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 
 	"com.wsgateway/connectionlookup"
@@ -40,15 +41,14 @@ func (e StreamEvent) String() string {
 }
 
 const (
-	EventOpen StreamEvent = "open"
-	EventClose StreamEvent = "close"
-	EventMessage StreamEvent = "message"
-	MessageText MessageType = "text"
+	EventOpen     StreamEvent = "open"
+	EventClose    StreamEvent = "close"
+	EventMessage  StreamEvent = "message"
+	MessageText   MessageType = "text"
 	MessageBinary MessageType = "binary"
 )
 
 // These connection tags will be included in any stream messages
-var includeTags = map[string]bool{"foo":true, "group":true}
 func makeTagString(con *connectionlookup.Connection) string {
 	tags := url.Values{}
 
@@ -56,8 +56,7 @@ func makeTagString(con *connectionlookup.Connection) string {
 	defer con.KeyValsLock.RUnlock()
 
 	for _, tag := range con.KeyVals {
-		_, exists := includeTags[tag.Key]
-		if exists {
+		if slices.Contains(con.StreamIncludeTags, tag.Key) {
 			tags.Add(tag.Key, tag.KeyVal)
 		}
 	}
@@ -66,6 +65,7 @@ func makeTagString(con *connectionlookup.Connection) string {
 }
 
 var r, _ = regexp.Compile(`{[a-zA-Z0-9_\-:]+}`)
+
 // Starting with `start`, replace any {variables} in `json` with the values from `vars`
 // eg: "action-{command:default}" = "action-default", or if vars contains "command":"join" then "action-join"
 func replaceConnectionVars(start string, json string, vars map[string]string) string {
@@ -79,7 +79,7 @@ func replaceConnectionVars(start string, json string, vars map[string]string) st
 	}
 
 	for _, match := range matches {
-		varName := string(match)[1:len(match)-1]
+		varName := string(match)[1 : len(match)-1]
 		defaultVal := "_"
 
 		if strings.Contains(varName, ":") {

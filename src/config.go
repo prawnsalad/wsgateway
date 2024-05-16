@@ -11,23 +11,23 @@ import (
 )
 
 type Config struct {
-	ListenAddr string `yaml:"listen_addr"`
+	ListenAddr          string `yaml:"listen_addr"`
 	ConnectionRedisSync struct {
 		Addr string `yaml:"addr"`
 	} `yaml:"connection_redis_sync"`
 	StreamRedis struct {
-		Addr string `yaml:"addr"`
+		Addr       string `yaml:"addr"`
 		StreamName string `yaml:"stream_name"`
 	} `yaml:"stream_redis"`
-	MaxMessageSizeKb int `yaml:"max_message_size_kb,omitempty"`
-	InternalEndpointWhitelist []string `yaml:"internal_endpoint_access_whitelist"`
+	MaxMessageSizeKb              int      `yaml:"max_message_size_kb,omitempty"`
+	InternalEndpointWhitelist     []string `yaml:"internal_endpoint_access_whitelist"`
 	InternalEndpointWhitelistInet []net.IPNet
-	Endpoints []struct {
-		Path string `yaml:"path"`
-		SetTags map[string]string `yaml:"set_tags"`
-		StreamIncludeTags []string `yaml:"stream_include_tags"`
-		MaxMessageSizeKb int `yaml:"max_message_size_kb,omitempty"`
-		JsonExtractVars map[string]string `yaml:"json_extract_vars"`
+	Endpoints                     []struct {
+		Path              string            `yaml:"path"`
+		SetTags           map[string]string `yaml:"set_tags"`
+		StreamIncludeTags []string          `yaml:"stream_include_tags"`
+		MaxMessageSizeKb  int               `yaml:"max_message_size_kb,omitempty"`
+		JsonExtractVars   map[string]string `yaml:"json_extract_vars"`
 	} `yaml:"endpoints"`
 	Prometheus struct {
 		Enabled bool `yaml:"enabled"`
@@ -51,22 +51,23 @@ func loadConfig(strConf string) (*Config, error) {
 }
 
 func loadConfigFromFile(filePath string) (*Config, error) {
-    rawFile, err := os.ReadFile(filePath)
-    if err != nil {
-        return nil, err
-    }
+	rawFile, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
 
-    return loadConfig(string(rawFile))
+	return loadConfig(string(rawFile))
 }
 
 // Ensures the required fields are set and sets any defaults
 func cleanConfig(config *Config) error {
+	log.Printf("Loading config")
 	if strings.Trim(config.ListenAddr, " \t") == "" {
 		config.ListenAddr = "0.0.0.0:8080"
 	}
 	if config.MaxMessageSizeKb == 0 {
 		// 128mb default
-		config.MaxMessageSizeKb = 1024*128
+		config.MaxMessageSizeKb = 1024 * 128
 	}
 
 	// Only allow localhost access to internal endpoints by default
@@ -97,9 +98,13 @@ func cleanConfig(config *Config) error {
 		}
 		if endpoint.SetTags == nil {
 			endpoint.SetTags = map[string]string{}
+		} else {
+			log.Printf("Loading tags from config: %s", endpoint.SetTags)
 		}
 		if endpoint.StreamIncludeTags == nil {
 			endpoint.StreamIncludeTags = []string{}
+		} else {
+			log.Printf("Loading stream include tags from config: %s", endpoint.StreamIncludeTags)
 		}
 		if endpoint.JsonExtractVars == nil {
 			endpoint.JsonExtractVars = map[string]string{}
