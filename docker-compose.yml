@@ -1,0 +1,13 @@
+version: '3'
+services:
+    redis:
+        image: redis:latest
+        ports:
+            - "6379:6379"
+    shell:
+        image: golang:1.22.2-bookworm
+        profiles:
+            - utils
+        command: bash
+        volumes:
+            - ./:/host          
