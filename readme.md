@@ -49,6 +49,10 @@ Send a message to all connections that have all the tags in the query string. Se
 
 Set `admin=1` tag on all connections that have all the tags set in the query string. Setting an empty value deletes the tag from the connection. Returns the number of connections the tag was set on.
 
+`curl -v -d"bye" http://localhost:6666/close?id=xxxx`
+
+Close all connections that have all the tags in the query string. Any posted body will be first sent to the clients in the same way as the /send endpoint. 
+
 `curl http://localhost:6666/status`
 
 Get a list of all connections and their tags.
