@@ -19,6 +19,7 @@ type ConnectionHandlers struct{
 	Stream streams.Stream
 	SetTags map[string]string
 	JsonExtractVars map[string]string
+	StreamIncludeTags []string
 }
 
 func (c *ConnectionHandlers) OnOpen(socket *gws.Conn) {
@@ -29,6 +30,7 @@ func (c *ConnectionHandlers) OnOpen(socket *gws.Conn) {
 	id := uuid.NewString()
 	con := connectionlookup.NewConnection(id, socket)
 	con.JsonExtractVars = &c.JsonExtractVars
+	con.StreamIncludeTags = &c.StreamIncludeTags
 	socket.Session().Store("con", con)
 
 	c.Libray.AddConnection(con, c.SetTags)
@@ -88,4 +90,15 @@ func sendMessageToConnections(conns []*connectionlookup.Connection, payloadType 
 	}
 
 	counterClientSentMsgs.Add(float64(len(conns)))
+}
+
+func closeConnections(conns []*connectionlookup.Connection, code int16, reason []byte) {
+	closeCode := []byte{uint8(code >> 8), uint8(code << 8 >> 8)}
+	payload :=  append(closeCode, reason...)
+
+	for _, con := range conns {
+		con.Socket.WriteAsync(gws.OpcodeCloseConnection, payload, func(err error) {
+			con.Socket.NetConn().Close()
+		})
+	}
 }

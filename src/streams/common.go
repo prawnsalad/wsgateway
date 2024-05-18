@@ -3,6 +3,7 @@ package streams
 import (
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 
 	"com.wsgateway/connectionlookup"
@@ -48,7 +49,6 @@ const (
 )
 
 // These connection tags will be included in any stream messages
-var includeTags = map[string]bool{"foo":true, "group":true}
 func makeTagString(con *connectionlookup.Connection) string {
 	tags := url.Values{}
 
@@ -56,8 +56,7 @@ func makeTagString(con *connectionlookup.Connection) string {
 	defer con.KeyValsLock.RUnlock()
 
 	for _, tag := range con.KeyVals {
-		_, exists := includeTags[tag.Key]
-		if exists {
+		if slices.Contains(*con.StreamIncludeTags, tag.Key) {
 			tags.Add(tag.Key, tag.KeyVal)
 		}
 	}

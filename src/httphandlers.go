@@ -51,10 +51,13 @@ func applyWsEndpointHandlers(conf *EndpointConfig, library *connectionlookup.Con
 		Stream: stream,
 		SetTags: conf.SetTags,
 		JsonExtractVars: conf.JsonExtractVars,
+		StreamIncludeTags: conf.StreamIncludeTags,
 	}
 	upgrader := gws.NewUpgrader(wsHandlers, &gws.ServerOption{
-		ReadAsyncEnabled: true,         // Parallel message processing
-		CompressEnabled:  true,         // Enable compression
+		PermessageDeflate: gws.PermessageDeflate{
+			Enabled: true,
+		},
+		ParallelEnabled: true,
 		Recovery:         gws.Recovery, // Exception recovery
 		ReadMaxPayloadSize: conf.ReadMaxPayloadSize,
 	})
@@ -77,13 +80,9 @@ func applyHttpHandlers(library *connectionlookup.ConnectionLookup, stream stream
 	internal.Handle("/metrics", promhttp.Handler())
 
 	internal.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Request: /status")
-
 		w.Header().Add("Content-Type", "text/plain");
 
-		log.Println("Calling dump connection...")
 		dump := library.DumpConnections()
-		log.Println("...", len(dump))
 		for _, con := range dump {
 			// bring the id tag to the tasrt of the line just for ease of readability
 			w.Write([]byte("id=" + con["id"] + " "));
@@ -177,6 +176,38 @@ func applyHttpHandlers(library *connectionlookup.ConnectionLookup, stream stream
 		}
 
 		sendMessageToConnections(cons, wsOpcode, data)
+		w.Write([]byte(strconv.Itoa(len(cons))))
+	})
+
+	internal.HandleFunc("/close", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			return
+		}
+
+		cons := getConsFromQueryStringVals(library, r)
+		if len(cons) == 0 {
+			w.Write([]byte("0"))
+			return
+		}
+
+		data, err := io.ReadAll(r.Body)
+		if err != nil {
+			log.Println("Error reading post body in close request: " + err.Error())
+			w.WriteHeader(503)
+			return
+		}
+
+		wsOpcode := gws.OpcodeText
+		if r.Header.Get("Content-Type") == "application/octet-stream" {
+			wsOpcode = gws.OpcodeBinary
+		}
+
+		if len(data) > 0 {
+			sendMessageToConnections(cons, wsOpcode, data)
+		}
+
+		closeConnections(cons, 1000, []byte("Closed by server"))
+
 		w.Write([]byte(strconv.Itoa(len(cons))))
 	})
 }
