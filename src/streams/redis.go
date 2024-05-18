@@ -9,18 +9,19 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+
 var ctx = context.Background()
 
 type StreamRedis struct {
-	client     *redis.Client
+	client *redis.Client
 	streamName string
 }
 
 func NewStreamRedis(redisUrl string, streamName string) (*StreamRedis, error) {
-	opts, err := redis.ParseURL(redisUrl)
-	if err != nil {
-		return nil, err
-	}
+    opts, err := redis.ParseURL(redisUrl)
+    if err != nil {
+        return nil, err
+    }
 
 	log.Printf("Connecting to redis for streaming at %s", opts.Addr)
 	rClient := redis.NewClient(opts)
@@ -30,11 +31,11 @@ func NewStreamRedis(redisUrl string, streamName string) (*StreamRedis, error) {
 	}
 
 	sync := &StreamRedis{
-		client:     rClient,
+		client: rClient,
 		streamName: streamName,
 	}
 
-	return sync, nil
+    return sync, nil
 }
 
 func (s *StreamRedis) PublishConnection(con *connectionlookup.Connection, event StreamEvent) {
@@ -42,8 +43,8 @@ func (s *StreamRedis) PublishConnection(con *connectionlookup.Connection, event 
 		Stream: "connectionevents",
 		Values: map[string]string{
 			"connection": con.Id,
-			"action":     event.String(),
-			"tags":       makeTagString(con),
+			"action": event.String(),
+			"tags": makeTagString(con),
 		},
 	})
 
@@ -60,10 +61,10 @@ func (s *StreamRedis) PublishMessage(con *connectionlookup.Connection, messageTy
 		Stream: streamName,
 		Values: map[string]string{
 			"connection": con.Id,
-			"action":     EventMessage.String(),
-			"type":       messageType.String(),
-			"tags":       makeTagString(con),
-			"message":    msgStr,
+			"action": EventMessage.String(),
+			"type": messageType.String(),
+			"tags": makeTagString(con),
+			"message": msgStr,
 		},
 	})
 
