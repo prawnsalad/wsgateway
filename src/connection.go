@@ -89,3 +89,14 @@ func sendMessageToConnections(conns []*connectionlookup.Connection, payloadType 
 
 	counterClientSentMsgs.Add(float64(len(conns)))
 }
+
+func closeConnections(conns []*connectionlookup.Connection, code int16, reason []byte) {
+	closeCode := []byte{uint8(code >> 8), uint8(code << 8 >> 8)}
+	payload :=  append(closeCode, reason...)
+
+	for _, con := range conns {
+		con.Socket.WriteAsync(gws.OpcodeCloseConnection, payload, func(err error) {
+			con.Socket.NetConn().Close()
+		})
+	}
+}
