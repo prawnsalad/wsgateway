@@ -27,38 +27,39 @@ func applyWsHandlers(library *connectionlookup.ConnectionLookup, stream streams.
 		}
 
 		applyWsEndpointHandlers(&EndpointConfig{
-			Path: c.Path,
-			SetTags: c.SetTags,
-			StreamIncludeTags: c.StreamIncludeTags,
+			Path:               c.Path,
+			SetTags:            c.SetTags,
+			StreamIncludeTags:  c.StreamIncludeTags,
 			ReadMaxPayloadSize: maxPayloadSize,
-			JsonExtractVars: c.JsonExtractVars,
+			JsonExtractVars:    c.JsonExtractVars,
 		}, library, stream)
 	}
 }
 
 type EndpointConfig struct {
-	Path string
-	SetTags map[string]string
-	StreamIncludeTags []string
+	Path               string
+	SetTags            map[string]string
+	StreamIncludeTags  []string
 	ReadMaxPayloadSize int
-	JsonExtractVars map[string]string
+	JsonExtractVars    map[string]string
 }
+
 func applyWsEndpointHandlers(conf *EndpointConfig, library *connectionlookup.ConnectionLookup, stream streams.Stream) {
 	log.Printf("Creating websocket endpoint at path %s", conf.Path)
 
 	wsHandlers := &ConnectionHandlers{
-		Libray: library,
-		Stream: stream,
-		SetTags: conf.SetTags,
-		JsonExtractVars: conf.JsonExtractVars,
+		Libray:            library,
+		Stream:            stream,
+		SetTags:           conf.SetTags,
+		JsonExtractVars:   conf.JsonExtractVars,
 		StreamIncludeTags: conf.StreamIncludeTags,
 	}
 	upgrader := gws.NewUpgrader(wsHandlers, &gws.ServerOption{
 		PermessageDeflate: gws.PermessageDeflate{
 			Enabled: true,
 		},
-		ParallelEnabled: true,
-		Recovery:         gws.Recovery, // Exception recovery
+		ParallelEnabled:    true,
+		Recovery:           gws.Recovery, // Exception recovery
 		ReadMaxPayloadSize: conf.ReadMaxPayloadSize,
 	})
 
@@ -80,15 +81,15 @@ func applyHttpHandlers(library *connectionlookup.ConnectionLookup, stream stream
 	internal.Handle("/metrics", promhttp.Handler())
 
 	internal.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Content-Type", "text/plain");
+		w.Header().Add("Content-Type", "text/plain")
 
 		dump := library.DumpConnections()
 		for _, con := range dump {
 			// bring the id tag to the tasrt of the line just for ease of readability
-			w.Write([]byte("id=" + con["id"] + " "));
+			w.Write([]byte("id=" + con["id"] + " "))
 
 			for key, val := range con {
-				if (key != "id") {
+				if key != "id" {
 					w.Write([]byte(key + "=" + val + " "))
 				}
 			}
@@ -99,16 +100,16 @@ func applyHttpHandlers(library *connectionlookup.ConnectionLookup, stream stream
 	internal.HandleFunc("/tree", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Request: /tree")
 
-		w.Header().Add("Content-Type", "text/plain");
+		w.Header().Add("Content-Type", "text/plain")
 
 		log.Println("Calling GetAllKeysAndValue...")
 		dump := library.GetAllKeysAndValue()
 		for key, vals := range dump {
 			// bring the id tag to the tasrt of the line just for ease of readability
-			w.Write([]byte(key + "\n"));
+			w.Write([]byte(key + "\n"))
 
 			for _, val := range vals {
-				w.Write([]byte(" - " + val + "\n"));
+				w.Write([]byte(" - " + val + "\n"))
 			}
 			w.Write([]byte("\n"))
 		}

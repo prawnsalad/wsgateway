@@ -4,7 +4,7 @@ import "sync"
 
 type StringMap struct {
 	strings map[string]int
-	mu sync.RWMutex
+	mu      sync.RWMutex
 }
 
 func NewStringMap() *StringMap {

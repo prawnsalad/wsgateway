@@ -71,12 +71,11 @@ func TestAddMultipleConnections(t *testing.T) {
 	}
 }
 
-
 func TestRemoveConnectionWithMultipleConnections(t *testing.T) {
 	lib, _ := NewConnectionLookup("")
 	c := NewConnection("1", nil)
 	lib.AddConnection(c, map[string]string{
-		"test": "value",
+		"test":   "value",
 		"single": "value",
 	})
 
@@ -84,7 +83,6 @@ func TestRemoveConnectionWithMultipleConnections(t *testing.T) {
 	lib.AddConnection(c2, map[string]string{
 		"test": "value",
 	})
-
 
 	if len(lib.connections) != 2 {
 		t.Error("expected 2 connections")
@@ -119,13 +117,13 @@ func TestGetConnectionWithTags(t *testing.T) {
 	c := NewConnection("1", nil)
 	lib.AddConnection(c, map[string]string{
 		"grouppid": "grp1",
-		"userid": "1",
+		"userid":   "1",
 	})
 
 	c2 := NewConnection("2", nil)
 	lib.AddConnection(c2, map[string]string{
 		"grouppid": "grp1",
-		"userid": "2",
+		"userid":   "2",
 	})
 
 	if len(lib.connections) != 2 {

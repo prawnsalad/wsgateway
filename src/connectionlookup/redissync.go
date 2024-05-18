@@ -15,10 +15,10 @@ type RedisSync struct {
 }
 
 func NewRedisSync(url string) (*RedisSync, error) {
-    opts, err := redis.ParseURL(url)
-    if err != nil {
-        return nil, err
-    }
+	opts, err := redis.ParseURL(url)
+	if err != nil {
+		return nil, err
+	}
 
 	log.Printf("Connecting to redis for connection data at %s", opts.Addr)
 	rClient := redis.NewClient(opts)
@@ -31,7 +31,7 @@ func NewRedisSync(url string) (*RedisSync, error) {
 		client: rClient,
 	}
 
-    return sync, nil
+	return sync, nil
 }
 
 func (s *RedisSync) RemoveConnection(con *Connection) {

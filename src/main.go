@@ -26,7 +26,7 @@ func main() {
 	if err != nil {
 		log.Println("Error reading max ulimit: " + err.Error())
 	}
-	
+
 	log.Printf("Starting wsgateway. CONFIG=%s NOFILES=%d GOMAXPROCS=%d NUMCPU=%d", configPath, noFiles, runtime.GOMAXPROCS(0), runtime.NumCPU())
 
 	loadedConfig, err := loadConfigFromFile(configPath)
@@ -40,7 +40,7 @@ func main() {
 	startHttpServer(library, stream)
 }
 
-func initComponents() (*connectionlookup.ConnectionLookup, streams.Stream){
+func initComponents() (*connectionlookup.ConnectionLookup, streams.Stream) {
 	library, err := connectionlookup.NewConnectionLookup(config.ConnectionRedisSync.Addr)
 	if err != nil {
 		log.Fatal("Error starting: ", err.Error())
@@ -70,17 +70,17 @@ func startHttpServer(library *connectionlookup.ConnectionLookup, stream streams.
 	log.Printf("Internal whitelist %v", config.InternalEndpointWhitelist)
 	log.Printf("Listening on %s", listenStr)
 	srv := http.Server{
-		Addr: listenStr,
+		Addr:        listenStr,
 		ReadTimeout: time.Second * 10,
 	}
 	srv.ListenAndServe()
 }
 
 func getMaxUlimit() (uint64, error) {
-    var rLimit syscall.Rlimit
-    err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit)
-    if err != nil {
-        return 0, err
-    }
+	var rLimit syscall.Rlimit
+	err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit)
+	if err != nil {
+		return 0, err
+	}
 	return rLimit.Max, nil
 }

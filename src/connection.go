@@ -11,14 +11,14 @@ import (
 )
 
 const (
-	idleTimeout     = 60 * time.Second
+	idleTimeout = 60 * time.Second
 )
 
-type ConnectionHandlers struct{
-	Libray *connectionlookup.ConnectionLookup
-	Stream streams.Stream
-	SetTags map[string]string
-	JsonExtractVars map[string]string
+type ConnectionHandlers struct {
+	Libray            *connectionlookup.ConnectionLookup
+	Stream            streams.Stream
+	SetTags           map[string]string
+	JsonExtractVars   map[string]string
 	StreamIncludeTags []string
 }
 
@@ -94,7 +94,7 @@ func sendMessageToConnections(conns []*connectionlookup.Connection, payloadType 
 
 func closeConnections(conns []*connectionlookup.Connection, code int16, reason []byte) {
 	closeCode := []byte{uint8(code >> 8), uint8(code << 8 >> 8)}
-	payload :=  append(closeCode, reason...)
+	payload := append(closeCode, reason...)
 
 	for _, con := range conns {
 		con.Socket.WriteAsync(gws.OpcodeCloseConnection, payload, func(err error) {

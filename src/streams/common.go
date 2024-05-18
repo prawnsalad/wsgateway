@@ -41,10 +41,10 @@ func (e StreamEvent) String() string {
 }
 
 const (
-	EventOpen StreamEvent = "open"
-	EventClose StreamEvent = "close"
-	EventMessage StreamEvent = "message"
-	MessageText MessageType = "text"
+	EventOpen     StreamEvent = "open"
+	EventClose    StreamEvent = "close"
+	EventMessage  StreamEvent = "message"
+	MessageText   MessageType = "text"
 	MessageBinary MessageType = "binary"
 )
 
@@ -65,6 +65,7 @@ func makeTagString(con *connectionlookup.Connection) string {
 }
 
 var r, _ = regexp.Compile(`{[a-zA-Z0-9_\-:]+}`)
+
 // Starting with `start`, replace any {variables} in `json` with the values from `vars`
 // eg: "action-{command:default}" = "action-default", or if vars contains "command":"join" then "action-join"
 func replaceConnectionVars(start string, json string, vars map[string]string) string {
@@ -78,7 +79,7 @@ func replaceConnectionVars(start string, json string, vars map[string]string) st
 	}
 
 	for _, match := range matches {
-		varName := string(match)[1:len(match)-1]
+		varName := string(match)[1 : len(match)-1]
 		defaultVal := "_"
 
 		if strings.Contains(varName, ":") {
