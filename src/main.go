@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"runtime"
 	"syscall"
+	"time"
 
 	"com.wsgateway/connectionlookup"
 	"com.wsgateway/streams"
@@ -68,7 +69,11 @@ func startHttpServer(library *connectionlookup.ConnectionLookup, stream streams.
 	listenStr := config.ListenAddr
 	log.Printf("Internal whitelist %v", config.InternalEndpointWhitelist)
 	log.Printf("Listening on %s", listenStr)
-	http.ListenAndServe(listenStr, nil)
+	srv := http.Server{
+		Addr: listenStr,
+		ReadTimeout: time.Second * 10,
+	}
+	srv.ListenAndServe()
 }
 
 func getMaxUlimit() (uint64, error) {
