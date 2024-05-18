@@ -11,13 +11,13 @@ import (
 )
 
 const (
-	idleTimeout = 60 * time.Second
+	idleTimeout     = 60 * time.Second
 )
 
-type ConnectionHandlers struct {
-	Libray          *connectionlookup.ConnectionLookup
-	Stream          streams.Stream
-	SetTags         map[string]string
+type ConnectionHandlers struct{
+	Libray *connectionlookup.ConnectionLookup
+	Stream streams.Stream
+	SetTags map[string]string
 	JsonExtractVars map[string]string
 }
 
@@ -77,14 +77,6 @@ func (c *ConnectionHandlers) OnMessage(socket *gws.Conn, message *gws.Message) {
 
 	c.Stream.PublishMessage(con, mType, message.Bytes())
 	message.Close()
-}
-
-func sendMessageAndClose(socket *gws.Conn, payloadType gws.Opcode, payload []byte) {
-	counterDisconnections.Inc()
-	log.Println("Sending message and closing")
-	socket.WriteMessage(payloadType, payload)
-
-	socket.WriteClose(1000, []byte("Closing socket"))
 }
 
 func sendMessageToConnections(conns []*connectionlookup.Connection, payloadType gws.Opcode, payload []byte) {
