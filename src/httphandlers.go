@@ -51,6 +51,7 @@ func applyWsEndpointHandlers(conf *EndpointConfig, library *connectionlookup.Con
 		Stream: stream,
 		SetTags: conf.SetTags,
 		JsonExtractVars: conf.JsonExtractVars,
+		StreamIncludeTags: conf.StreamIncludeTags,
 	}
 	upgrader := gws.NewUpgrader(wsHandlers, &gws.ServerOption{
 		PermessageDeflate: gws.PermessageDeflate{
@@ -79,8 +80,6 @@ func applyHttpHandlers(library *connectionlookup.ConnectionLookup, stream stream
 	internal.Handle("/metrics", promhttp.Handler())
 
 	internal.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Request: /status")
-
 		w.Header().Add("Content-Type", "text/plain");
 
 		dump := library.DumpConnections()

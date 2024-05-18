@@ -16,6 +16,7 @@ type Connection struct {
 	KeyValsLock sync.RWMutex
 
 	JsonExtractVars *map[string]string
+	StreamIncludeTags *[]string
 }
 func NewConnection(id string, socket *gws.Conn) *Connection {
 	return &Connection{
@@ -23,6 +24,7 @@ func NewConnection(id string, socket *gws.Conn) *Connection {
 		Socket: socket,
 		KeyVals: make(map[int]*ConnectionLockList),
 		JsonExtractVars: nil,
+		StreamIncludeTags: nil,
 	}
 }
 
