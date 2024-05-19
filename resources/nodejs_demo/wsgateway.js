@@ -78,13 +78,14 @@ module.exports.WsGateway = class WsGateway extends EventEmitter {
     let ws = this.websockets.get(id);
     if (!ws) {
       ws = new WebSocket(this, id);
-
-      const tags = querystring.parse(rawTagString);
-      if (tags) {
-        ws.tags = new Map(Object.entries(tags));
-      }
-
       this.websockets.set(id, ws);
+    }
+
+    const tags = querystring.parse(rawTagString);
+    if (tags) {
+      for (const [key, val] of Object.entries(tags)) {
+        ws.tags.set(key, val);
+      }
     }
 
     return ws;
@@ -110,6 +111,13 @@ module.exports.WsGateway = class WsGateway extends EventEmitter {
       body: message,
     });
   }
+
+  async setTags(tags, newTags) {
+    await fetch(`${this.gatewayPath}/settags?${querystring.stringify(tags)}`, {
+      method: "POST",
+      body: querystring.stringify(newTags),
+    });
+  }
 };
 
 class WebSocket extends EventEmitter {
@@ -125,6 +133,10 @@ class WebSocket extends EventEmitter {
   }
 
   close() {}
+
+  setTags(newTags) {
+    this.wsGateway.setTags({ id: this.id }, newTags);
+  }
 }
 
 function redisHashToObject(hash) {
