@@ -47,8 +47,10 @@ func (c *ConnectionHandlers) OnClose(socket *gws.Conn, err error) {
 	}
 	con := storeCon.(*connectionlookup.Connection)
 
-	c.Libray.RemoveConnection(con)
+	// Order is important - RemoveConnection removes the tags from the connection while
+	// PublishConnection needs them
 	c.Stream.PublishConnection(con, streams.EventClose)
+	c.Libray.RemoveConnection(con)
 }
 
 func (c *ConnectionHandlers) OnPing(socket *gws.Conn, payload []byte) {

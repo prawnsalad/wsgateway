@@ -64,11 +64,11 @@ func makeTagString(con *connectionlookup.Connection) string {
 	return tags.Encode()
 }
 
-var r, _ = regexp.Compile(`{[a-zA-Z0-9_\-:]+}`)
+var r, _ = regexp.Compile(`{[a-zA-Z0-9_\-:.]+}`)
 
 // Starting with `start`, replace any {variables} in `json` with the values from `vars`
 // eg: "action-{command:default}" = "action-default", or if vars contains "command":"join" then "action-join"
-func replaceConnectionVars(start string, json string, vars map[string]string) string {
+func replaceConnectionVars(start string, json string, varsToJsonPath map[string]string, conTags map[string]string) string {
 	if !strings.Contains(start, "{") {
 		return start
 	}
@@ -88,11 +88,19 @@ func replaceConnectionVars(start string, json string, vars map[string]string) st
 			defaultVal = parts[1]
 		}
 
-		jsonPath := vars[varName]
-		value := gjson.Get(json, jsonPath)
-		val := value.String()
+		var val string
+		if strings.HasPrefix(varName, "tag.") {
+			tagVal, exists := conTags[varName[4:]]
+			if exists {
+				val = tagVal
+			}
+		} else if strings.HasPrefix(varName, "json.") {
+			jsonPath := varsToJsonPath[varName[5:]]
+			value := gjson.Get(json, jsonPath)
+			val = value.String()
+		}
 
-		// If we didn't find this variable, fallback to an underscore
+		// If we didn't find this variable, fallback to the default value
 		if val == "" {
 			val = defaultVal
 		}

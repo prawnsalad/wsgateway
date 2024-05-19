@@ -29,6 +29,19 @@ func NewConnection(id string, socket *gws.Conn) *Connection {
 	}
 }
 
+func (c *Connection) TagsAsMap() map[string]string {
+	// TODO: Can this be cached on the connection? And wiped when its tags are updated?
+	tags := make(map[string]string)
+	c.KeyValsLock.RLock()
+	defer c.KeyValsLock.RUnlock()
+
+	for _, tag := range c.KeyVals {
+		tags[tag.Key] = tag.KeyVal
+	}
+
+	return tags
+}
+
 type ConnectionList map[string]*Connection
 type ConnectionLockList struct {
 	ConnectionList
