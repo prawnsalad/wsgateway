@@ -7,10 +7,12 @@ internal_endpoint_access_whitelist:
   - ::1/128
   - fc00::/7
 connection_redis_sync:
+  # Connection state and tags updated here to the hash key connection:<id>
   addr: redis://localhost:6379/0?client_name=wsgateway
 stream_redis:
+  # open/close/message events streamed here
   addr: redis://localhost:6379/0?client_name=wsgatewaystream&pool_size=1000
-  stream_name: connectionevents-{jsonExtractedVarName:defaultValue}
+  stream_name: connectionevents
 max_message_size_kb: 1024
 endpoints:
   - path: /connect
