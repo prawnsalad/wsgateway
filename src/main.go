@@ -46,9 +46,17 @@ func initComponents() (*connectionlookup.ConnectionLookup, streams.Stream) {
 		log.Fatal("Error starting: ", err.Error())
 	}
 
-	stream, err := streams.NewStreamRedis(config.StreamRedis.Addr, config.StreamRedis.StreamName)
-	if err != nil {
-		log.Fatal("Error starting: ", err.Error())
+	var stream streams.Stream
+	if config.StreamAmqp.Addr != "" {
+		stream, err = streams.NewStreamAmqp(config.StreamAmqp.Addr, config.StreamAmqp.Exchange, config.StreamAmqp.ExchangeType, config.StreamAmqp.RoutingKey)
+		if err != nil {
+			log.Fatal("Error starting: ", err.Error())
+		}
+	} else if config.StreamRedis.Addr != "" {
+		stream, err = streams.NewStreamRedis(config.StreamRedis.Addr, config.StreamRedis.StreamName)
+		if err != nil {
+			log.Fatal("Error starting: ", err.Error())
+		}
 	}
 
 	return library, stream

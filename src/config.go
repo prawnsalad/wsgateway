@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -19,6 +20,13 @@ type Config struct {
 		Addr       string `yaml:"addr"`
 		StreamName string `yaml:"stream_name"`
 	} `yaml:"stream_redis"`
+	StreamAmqp struct {
+		Addr       string `yaml:"addr"`
+		Exchange   string `yaml:"exchange"`
+		ExchangeType string `yaml:"exchange_type"`
+		RoutingKey string `yaml:"routing_key"`
+		Headers	map[string]string `yaml:"headers"`
+	} `yaml:"stream_amqp"`
 	MaxMessageSizeKb              int      `yaml:"max_message_size_kb,omitempty"`
 	InternalEndpointWhitelist     []string `yaml:"internal_endpoint_access_whitelist"`
 	InternalEndpointWhitelistInet []net.IPNet
@@ -84,11 +92,22 @@ func cleanConfig(config *Config) error {
 		config.InternalEndpointWhitelistInet = append(config.InternalEndpointWhitelistInet, *ipNet)
 	}
 
-	if config.StreamRedis.Addr == "" {
-		config.StreamRedis.Addr = "redis://localhost:6379/0?client_name=wsgatewaystream&pool_size=1000"
+	if config.StreamRedis.Addr == "" && config.StreamAmqp.Addr == "" {
+		return fmt.Errorf("either stream_redis or stream_amqp must be configured")
 	}
-	if config.StreamRedis.StreamName == "" {
-		config.StreamRedis.StreamName = "connectionevents"
+	if config.StreamRedis.Addr != "" && config.StreamAmqp.Addr != "" {
+		return fmt.Errorf("only one of stream_redis or stream_amqp can be configured")
+	}
+
+	if config.StreamRedis.Addr != "" {
+		if config.StreamRedis.StreamName == "" {
+			config.StreamRedis.StreamName = "connectionevents"
+		}
+	}
+	if config.StreamAmqp.Addr != "" {
+		if config.StreamAmqp.Exchange == "" {
+			config.StreamAmqp.Exchange = "wsgateway.wsevents"
+		}
 	}
 
 	for _, endpoint := range config.Endpoints {
