@@ -4,6 +4,8 @@ go 1.21
 
 require github.com/prometheus/client_golang v1.19.0
 
+require github.com/rabbitmq/amqp091-go v1.10.0 // indirect
+
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect

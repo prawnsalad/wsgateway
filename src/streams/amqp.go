@@ -1,24 +1,32 @@
 package streams
 
 import (
+	"container/list"
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
+	"sync"
 	"time"
 
 	"com.wsgateway/connectionlookup"
-	"github.com/streadway/amqp"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
+type AmqpEvent struct {
+	routingKey string
+	message    amqp.Publishing
+}
 type StreamAmqp struct {
 	conn         *amqp.Connection
 	channel      *amqp.Channel
 	exchangeName string
-	exchangeType string
 	routingKey   string
+	backlogChan  chan AmqpEvent
+	backlog      *list.List
 }
 
-func NewStreamAmqp(amqpUrl, exchangeName, exchangeType, routingKey string) (*StreamAmqp, error) {
+func NewStreamAmqp(amqpUrl, exchangeName, queueName, routingKey string) (*StreamAmqp, error) {
 	log.Printf("Connecting via AMQP for streaming at %s", amqpUrl)
 	amqpConn, err := amqp.Dial(amqpUrl)
 	if err != nil {
@@ -30,10 +38,22 @@ func NewStreamAmqp(amqpUrl, exchangeName, exchangeType, routingKey string) (*Str
 		return nil, fmt.Errorf("error creating AMQP channel: %v", err)
 	}
 
-	if exchangeType != "" {
-		err = amqpChan.ExchangeDeclare(exchangeName, exchangeType, true, false, false, false, nil)
+	if exchangeName != "" {
+		err = amqpChan.ExchangeDeclare(exchangeName, "topic", true, false, false, false, nil)
 		if err != nil {
 			return nil, fmt.Errorf("error declaring AMQP exchange: %v", err)
+		}
+	}
+
+	if queueName != "" {
+		queue, err := amqpChan.QueueDeclare(queueName, true, false, false, false, nil)
+		if err != nil {
+			return nil, fmt.Errorf("error declaring AMQP queue: %v", err)
+		}
+
+		err = amqpChan.QueueBind(queue.Name, "#", exchangeName, false, nil)
+		if err != nil {
+			return nil, fmt.Errorf("error binding AMQP queue to exchange: %v", err)
 		}
 	}
 
@@ -41,11 +61,72 @@ func NewStreamAmqp(amqpUrl, exchangeName, exchangeType, routingKey string) (*Str
 		conn:         amqpConn,
 		channel:      amqpChan,
 		exchangeName: exchangeName,
-		exchangeType: exchangeType,
 		routingKey:   routingKey,
+		backlogChan:  make(chan AmqpEvent, 100),
 	}
 
+	go sync.Publisher()
+
 	return sync, nil
+}
+
+func (s *StreamAmqp) Publisher() {
+	backlogLog := sync.RWMutex{}
+	backlog := list.New()
+	retryCnt := 0
+
+	go func() {
+		for event := range s.backlogChan {
+			backlogLog.Lock()
+			backlog.PushBack(event)
+			backlogLog.Unlock()
+			
+		}
+	}()
+
+	for {
+		backlogLog.RLock()
+		e := backlog.Front()
+		backlogLog.RUnlock()
+		if e == nil {
+			// TODO: Find a way to get rid of this sleep
+			time.Sleep(1 * time.Millisecond)
+			continue
+		}
+
+		event := e.Value.(AmqpEvent)
+		println("Publishing event", s.exchangeName, event.routingKey, string(event.message.Body))
+		for {
+			err := s.channel.Publish(s.exchangeName, event.routingKey, false, false, event.message)
+			if err != nil {
+				retrySec := backoff(float64(retryCnt), 10)
+
+				backlogLog.Lock()
+				backlogLen := backlog.Len()
+				backlogLog.Unlock()
+
+				log.Printf("AMQP publish error, retrying in %v seconds with %d outstanding events: %s", retrySec, backlogLen, err.Error())
+				time.Sleep(time.Second * time.Duration(retrySec))
+				retryCnt++
+				continue
+			}
+
+			retryCnt = 0
+			break
+		}
+
+		backlogLog.Lock()
+		backlog.Remove(e)
+		backlogLog.Unlock()
+	}
+}
+
+func backoff(retryCnt, maxLen float64) float64 {
+	len := math.Pow(2, float64(retryCnt))
+	if len > maxLen {
+		len = maxLen
+	}
+	return len
 }
 
 func (s *StreamAmqp) PublishConnection(con *connectionlookup.Connection, event StreamEvent) {
@@ -60,14 +141,14 @@ func (s *StreamAmqp) PublishConnection(con *connectionlookup.Connection, event S
 		log.Println("AMQP JSON encoding error:", err)
 	}
 
-	err = s.channel.Publish(s.exchangeName, routingKey, false, false, amqp.Publishing{
-		DeliveryMode: amqp.Persistent,
-		ContentType:  "application/json",
-		Timestamp:    time.Now(),
-		Body:         body,
-	})
-	if err != nil {
-		log.Println("AMQP publish error:", err)
+	s.backlogChan <- AmqpEvent{
+		routingKey: routingKey,
+		message: amqp.Publishing{
+			DeliveryMode: amqp.Persistent,
+			ContentType:  "application/json",
+			Timestamp:    time.Now(),
+			Body:         body,
+		},
 	}
 }
 
@@ -86,13 +167,13 @@ func (s *StreamAmqp) PublishMessage(con *connectionlookup.Connection, messageTyp
 		log.Println("AMQP JSON encoding error:", err)
 	}
 
-	err = s.channel.Publish(s.exchangeName, routingKey, false, false, amqp.Publishing{
-		DeliveryMode: amqp.Persistent,
-		ContentType:  "application/json",
-		Timestamp:    time.Now(),
-		Body:         body,
-	})
-	if err != nil {
-		log.Println("AMQP publish error:", err)
+	s.backlogChan <- AmqpEvent{
+		routingKey: routingKey,
+		message: amqp.Publishing{
+			DeliveryMode: amqp.Persistent,
+			ContentType:  "application/json",
+			Timestamp:    time.Now(),
+			Body:         body,
+		},
 	}
 }

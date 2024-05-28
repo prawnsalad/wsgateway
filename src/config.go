@@ -23,7 +23,7 @@ type Config struct {
 	StreamAmqp struct {
 		Addr       string `yaml:"addr"`
 		Exchange   string `yaml:"exchange"`
-		ExchangeType string `yaml:"exchange_type"`
+		Queue string `yaml:"queue"`
 		RoutingKey string `yaml:"routing_key"`
 		Headers	map[string]string `yaml:"headers"`
 	} `yaml:"stream_amqp"`
@@ -102,11 +102,6 @@ func cleanConfig(config *Config) error {
 	if config.StreamRedis.Addr != "" {
 		if config.StreamRedis.StreamName == "" {
 			config.StreamRedis.StreamName = "connectionevents"
-		}
-	}
-	if config.StreamAmqp.Addr != "" {
-		if config.StreamAmqp.Exchange == "" {
-			config.StreamAmqp.Exchange = "wsgateway.wsevents"
 		}
 	}
 
