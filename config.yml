@@ -11,9 +11,23 @@ connection_redis_sync:
   # Connection state and tags updated here to the hash key connection:<id>
   addr: redis://localhost:6379/0?client_name=wsgateway
 stream_redis:
-  # open/close/message events streamed here
+  # open/close/message connection events streaming to redis
   addr: redis://localhost:6379/0?client_name=wsgatewaystream&pool_size=1000
   stream_name: connectionevents
+stream_amqp:
+  # open/close/message connection events streaming to AMQP
+  # addr: amqp://guest:guest@localhost:5672/
+
+  # If manually configuring the exchange, create it with type "topic"
+  exchange: wsgateway
+
+  # If a queue is given, it will be created and bound to the exchange.
+  # If no queue is given, the exchange routing must be configured on the AMQP server.
+  # queue: wsgateway.wsevents
+
+  # Default: no value
+  # routing_key: commmand-{json.command:unknown_command}
+
 max_message_size_kb: 1024
 endpoints:
   - path: /connect
