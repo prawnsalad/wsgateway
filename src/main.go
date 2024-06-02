@@ -73,7 +73,11 @@ func startHttpServer(library *connectionlookup.ConnectionLookup, stream streams.
 		Addr:        listenStr,
 		ReadTimeout: time.Second * 10,
 	}
-	srv.ListenAndServe()
+
+	err := srv.ListenAndServe()
+	if err != nil {
+		log.Fatalln("Error starting server: ", err.Error())
+	}
 }
 
 func getMaxUlimit() (uint64, error) {
