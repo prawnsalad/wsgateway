@@ -9,7 +9,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-var ctx = context.Background()
+var redisCtx = context.Background()
 
 type StreamRedis struct {
 	client     *redis.Client
@@ -24,7 +24,7 @@ func NewStreamRedis(redisUrl string, streamName string) (*StreamRedis, error) {
 
 	log.Printf("Connecting to redis for streaming at %s", opts.Addr)
 	rClient := redis.NewClient(opts)
-	res := rClient.Ping(ctx)
+	res := rClient.Ping(redisCtx)
 	if res.Err() != nil {
 		return nil, fmt.Errorf("error conencting to redis: %v", res.Err().Error())
 	}
@@ -40,7 +40,7 @@ func NewStreamRedis(redisUrl string, streamName string) (*StreamRedis, error) {
 func (s *StreamRedis) PublishConnection(con *connectionlookup.Connection, event StreamEvent) {
 	streamName := replaceConnectionVars(s.streamName, "", *con.JsonExtractVars, con.TagsAsMap())
 
-	res := s.client.XAdd(ctx, &redis.XAddArgs{
+	res := s.client.XAdd(redisCtx, &redis.XAddArgs{
 		Stream: streamName,
 		Values: map[string]string{
 			"connection": con.Id,
@@ -58,7 +58,7 @@ func (s *StreamRedis) PublishMessage(con *connectionlookup.Connection, messageTy
 	msgStr := string(message)
 	streamName := replaceConnectionVars(s.streamName, msgStr, *con.JsonExtractVars, con.TagsAsMap())
 
-	res := s.client.XAdd(ctx, &redis.XAddArgs{
+	res := s.client.XAdd(redisCtx, &redis.XAddArgs{
 		Stream: streamName,
 		Values: map[string]string{
 			"connection": con.Id,
