@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"strings"
 	"sync"
 	"time"
 
@@ -18,56 +19,76 @@ type AmqpEvent struct {
 	message    amqp.Publishing
 }
 type StreamAmqp struct {
+	url          string
 	conn         *amqp.Connection
 	channel      *amqp.Channel
 	exchangeName string
+	queueName    string
 	routingKey   string
 	backlogChan  chan AmqpEvent
 	backlog      *list.List
 }
 
 func NewStreamAmqp(amqpUrl, exchangeName, queueName, routingKey string) (*StreamAmqp, error) {
-	log.Printf("Connecting via AMQP for streaming at %s", amqpUrl)
-	amqpConn, err := amqp.Dial(amqpUrl)
-	if err != nil {
-		return nil, fmt.Errorf("error conencting via AMQP: %v", err)
-	}
-
-	amqpChan, err := amqpConn.Channel()
-	if err != nil {
-		return nil, fmt.Errorf("error creating AMQP channel: %v", err)
-	}
-
-	if exchangeName != "" {
-		err = amqpChan.ExchangeDeclare(exchangeName, "topic", true, false, false, false, nil)
-		if err != nil {
-			return nil, fmt.Errorf("error declaring AMQP exchange: %v", err)
-		}
-	}
-
-	if queueName != "" {
-		queue, err := amqpChan.QueueDeclare(queueName, true, false, false, false, nil)
-		if err != nil {
-			return nil, fmt.Errorf("error declaring AMQP queue: %v", err)
-		}
-
-		err = amqpChan.QueueBind(queue.Name, "#", exchangeName, false, nil)
-		if err != nil {
-			return nil, fmt.Errorf("error binding AMQP queue to exchange: %v", err)
-		}
-	}
-
 	sync := &StreamAmqp{
-		conn:         amqpConn,
-		channel:      amqpChan,
+		url :         amqpUrl,
+		conn:         nil,
+		channel:      nil,
 		exchangeName: exchangeName,
+		queueName:    queueName,
 		routingKey:   routingKey,
 		backlogChan:  make(chan AmqpEvent, 100),
+	}
+
+	err := sync.makeConnection()
+	if err != nil {
+		return nil, err
 	}
 
 	go sync.Publisher()
 
 	return sync, nil
+}
+
+func (s *StreamAmqp) makeConnection() error {
+	if s.conn != nil {
+		s.conn.Close()
+	}
+
+	log.Printf("Connecting via AMQP for streaming at %s", s.url)
+	amqpConn, err := amqp.Dial(s.url)
+	if err != nil {
+		return fmt.Errorf("error conencting via AMQP: %v", err)
+	}
+
+	amqpChan, err := amqpConn.Channel()
+	if err != nil {
+		return fmt.Errorf("error creating AMQP channel: %v", err)
+	}
+
+	if s.exchangeName != "" {
+		err = amqpChan.ExchangeDeclare(s.exchangeName, "topic", true, false, false, false, nil)
+		if err != nil {
+			return fmt.Errorf("error declaring AMQP exchange: %v", err)
+		}
+	}
+
+	if s.queueName != "" {
+		queue, err := amqpChan.QueueDeclare(s.queueName, true, false, false, false, nil)
+		if err != nil {
+			return fmt.Errorf("error declaring AMQP queue: %v", err)
+		}
+
+		err = amqpChan.QueueBind(queue.Name, "#", s.exchangeName, false, nil)
+		if err != nil {
+			return fmt.Errorf("error binding AMQP queue to exchange: %v", err)
+		}
+	}
+
+	s.conn = amqpConn
+	s.channel = amqpChan
+
+	return nil
 }
 
 func (s *StreamAmqp) Publisher() {
@@ -95,7 +116,6 @@ func (s *StreamAmqp) Publisher() {
 		}
 
 		event := e.Value.(AmqpEvent)
-		println("Publishing event", s.exchangeName, event.routingKey, string(event.message.Body))
 		for {
 			err := s.channel.Publish(s.exchangeName, event.routingKey, false, false, event.message)
 			if err != nil {
@@ -108,6 +128,15 @@ func (s *StreamAmqp) Publisher() {
 				log.Printf("AMQP publish error, retrying in %v seconds with %d outstanding events: %s", retrySec, backlogLen, err.Error())
 				time.Sleep(time.Second * time.Duration(retrySec))
 				retryCnt++
+
+				// connection related errors we just reconnect everything and then try again
+				if strings.Contains(err.Error(), "channel/connection is not open") {
+					err = s.makeConnection()
+					if err != nil {
+						log.Printf("AMQP connection error: %v", err)
+					}
+				}
+
 				continue
 			}
 
