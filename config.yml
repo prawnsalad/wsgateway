@@ -1,5 +1,6 @@
 listen_addr: 0.0.0.0:5000
 internal_endpoint_access_whitelist:
+  # IP ranges that have access to internal endpoints, ie. /send /settag /metrics /close etc
   - 127.0.0.1/8
   - 192.168.0.0/16
   - 10.0.0.0/8
@@ -33,9 +34,12 @@ endpoints:
 
   - path: /connect/v2
     set_tags:
+      # Add these default tags to all connections that connect here
       version: 2
     stream_include_tags:
+      # Include these tags when streaming events to the event stream
       - version
       - group
 prometheus:
+  # Enable prometheus metrics at /metrics
   enabled: true
